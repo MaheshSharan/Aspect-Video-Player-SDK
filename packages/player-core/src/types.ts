@@ -8,7 +8,7 @@ import {
     type PlayerError,
     type PlayerConfig,
     type Unsubscribe,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 
 /**
  * Player event map for type-safe event handling.

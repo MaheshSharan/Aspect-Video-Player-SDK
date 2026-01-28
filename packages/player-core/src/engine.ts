@@ -12,7 +12,7 @@ import {
     ErrorCode,
     clamp,
     sleep,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 
 import type {
     PlayerEngine,

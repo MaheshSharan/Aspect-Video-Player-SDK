@@ -10,8 +10,8 @@ import {
     type PlayerError,
     type Unsubscribe,
     detectPlatform,
-} from '@aspect/shared';
-import type { SegmentTiming } from '@aspect/player-core';
+} from 'aspect-player-shared';
+import type { SegmentTiming } from 'aspect-player-core';
 import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback } from './types';
 
 const logger = createLogger('hls-adapter');

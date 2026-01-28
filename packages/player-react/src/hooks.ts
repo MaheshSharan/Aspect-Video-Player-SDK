@@ -3,9 +3,9 @@ import {
     CorePlayerEngine,
     type PlayerEngine,
     type PlayerSnapshot,
-} from '@aspect/player-core';
-import { createSourceAdapter } from '@aspect/player-sources';
-import type { MediaSourceConfig, Unsubscribe } from '@aspect/shared';
+} from 'aspect-player-core';
+import { createSourceAdapter } from 'aspect-player-sources';
+import type { MediaSourceConfig, Unsubscribe } from 'aspect-player-shared';
 import type { UsePlayerOptions, UsePlayerReturn } from './types';
 
 /**
@@ -356,18 +356,18 @@ export function useFullscreen(engine: PlayerEngine | null) {
  * @returns Quality control functions and state
  */
 export function useQuality(engine: PlayerEngine | null) {
-    const [levels, setLevels] = useState<readonly import('@aspect/shared').QualityLevel[]>([]);
-    const [currentLevel, setCurrentLevel] = useState<import('@aspect/shared').QualityLevel | undefined>();
+    const [levels, setLevels] = useState<readonly import('aspect-player-shared').QualityLevel[]>([]);
+    const [currentLevel, setCurrentLevel] = useState<import('aspect-player-shared').QualityLevel | undefined>();
     const [isAuto, setIsAuto] = useState(true);
 
     useEffect(() => {
         if (engine === null) return;
 
-        const updateLevels = ({ levels: l }: { levels: readonly import('@aspect/shared').QualityLevel[] }) => {
+        const updateLevels = ({ levels: l }: { levels: readonly import('aspect-player-shared').QualityLevel[] }) => {
             setLevels(l);
         };
 
-        const updateQuality = ({ level, auto }: { level: import('@aspect/shared').QualityLevel; auto: boolean }) => {
+        const updateQuality = ({ level, auto }: { level: import('aspect-player-shared').QualityLevel; auto: boolean }) => {
             setCurrentLevel(level);
             setIsAuto(auto);
         };

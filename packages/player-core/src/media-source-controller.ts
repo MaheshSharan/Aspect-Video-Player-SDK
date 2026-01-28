@@ -7,7 +7,7 @@ import {
     type Unsubscribe,
     createDeferred,
     type Deferred,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 
 const logger = createLogger('mediasource-controller');
 

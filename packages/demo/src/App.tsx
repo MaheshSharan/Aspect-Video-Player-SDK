@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { AspectPlayer } from '@aspect/player-react';
+import { AspectPlayer } from 'aspect-player-react';
 import { streams } from './streams';
 
 function App() {

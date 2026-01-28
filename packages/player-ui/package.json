@@ -1,7 +1,20 @@
 {
-    "name": "@aspect/player-ui",
+    "name": "aspect-player-ui",
     "version": "0.1.0",
-    "description": "Optional UI layer for stream player",
+    "description": "Netflix-style UI controls for Aspect Video Player",
+    "license": "MIT",
+    "author": "Mahesh Sharan",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MaheshSharan/Aspect-Video-Player-SDK.git",
+        "directory": "packages/player-ui"
+    },
+    "keywords": [
+        "video-player",
+        "ui-controls",
+        "netflix-ui",
+        "media-player"
+    ],
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
@@ -35,8 +48,8 @@
         "clean": "rimraf dist"
     },
     "dependencies": {
-        "@aspect/shared": "workspace:*",
-        "@aspect/player-core": "workspace:*"
+        "aspect-player-shared": "workspace:*",
+        "aspect-player-core": "workspace:*"
     },
     "devDependencies": {
         "rimraf": "^5.0.5",

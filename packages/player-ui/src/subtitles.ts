@@ -1,5 +1,5 @@
 import type { PlayerUIConfig } from './types';
-import type { PlayerSnapshot } from '@aspect/player-core';
+import type { PlayerSnapshot } from 'aspect-player-core';
 
 /**
  * Subtitle cue interface.

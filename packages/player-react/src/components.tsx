@@ -10,10 +10,10 @@ import {
     CorePlayerEngine,
     type PlayerEngine,
     type PlayerSnapshot,
-} from '@aspect/player-core';
-import { createSourceAdapter } from '@aspect/player-sources';
-import { createPlayerUI, type PlayerUI as PlayerUIClass } from '@aspect/player-ui';
-import type { MediaSourceConfig, Unsubscribe } from '@aspect/shared';
+} from 'aspect-player-core';
+import { createSourceAdapter } from 'aspect-player-sources';
+import { createPlayerUI, type PlayerUI as PlayerUIClass } from 'aspect-player-ui';
+import type { MediaSourceConfig, Unsubscribe } from 'aspect-player-shared';
 import type { AspectPlayerProps } from './types';
 import { PlayerContext } from './context';
 
@@ -22,7 +22,7 @@ import { PlayerContext } from './context';
  *
  * @example
  * ```tsx
- * import { AspectPlayer } from '@aspect/player-react';
+ * import { AspectPlayer } from 'aspect-player-react';
  *
  * function App() {
  *   const playerRef = useRef<PlayerRef>(null);

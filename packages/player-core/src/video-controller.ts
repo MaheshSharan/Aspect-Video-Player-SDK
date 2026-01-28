@@ -4,7 +4,7 @@ import {
     type VideoElementAdapter,
     type Unsubscribe,
     clamp,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 
 const logger = createLogger('video-controller');
 

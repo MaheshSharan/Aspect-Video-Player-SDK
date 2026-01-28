@@ -1,5 +1,5 @@
-import type { PlayerEngine, PlayerSnapshot } from '@aspect/player-core';
-import type { MediaSourceConfig, PlayerConfig, QualityLevel } from '@aspect/shared';
+import type { PlayerEngine, PlayerSnapshot } from 'aspect-player-core';
+import type { MediaSourceConfig, PlayerConfig, QualityLevel } from 'aspect-player-shared';
 
 /**
  * Player ref interface for imperative control.

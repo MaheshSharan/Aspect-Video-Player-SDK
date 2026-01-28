@@ -6,7 +6,7 @@ import {
     type BufferInfo,
     type BufferRange,
     throttle,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 
 const logger = createLogger('buffer-manager');
 

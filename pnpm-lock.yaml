@@ -41,13 +41,13 @@ importers:
 
   packages/demo:
     dependencies:
-      '@aspect/player-core':
+      aspect-player-core:
         specifier: workspace:*
         version: link:../player-core
-      '@aspect/player-react':
+      aspect-player-react:
         specifier: workspace:*
         version: link:../player-react
-      '@aspect/shared':
+      aspect-player-shared:
         specifier: workspace:*
         version: link:../shared
       react:
@@ -75,7 +75,7 @@ importers:
 
   packages/player-core:
     dependencies:
-      '@aspect/shared':
+      aspect-player-shared:
         specifier: workspace:*
         version: link:../shared
     devDependencies:
@@ -94,18 +94,18 @@ importers:
 
   packages/player-react:
     dependencies:
-      '@aspect/player-core':
+      aspect-player-core:
         specifier: workspace:*
         version: link:../player-core
-      '@aspect/player-sources':
-        specifier: workspace:*
-        version: link:../player-sources
-      '@aspect/player-ui':
-        specifier: workspace:*
-        version: link:../player-ui
-      '@aspect/shared':
+      aspect-player-shared:
         specifier: workspace:*
         version: link:../shared
+      aspect-player-sources:
+        specifier: workspace:*
+        version: link:../player-sources
+      aspect-player-ui:
+        specifier: workspace:*
+        version: link:../player-ui
     devDependencies:
       '@types/react':
         specifier: ^18.2.0
@@ -134,10 +134,10 @@ importers:
 
   packages/player-sources:
     dependencies:
-      '@aspect/player-core':
+      aspect-player-core:
         specifier: workspace:*
         version: link:../player-core
-      '@aspect/shared':
+      aspect-player-shared:
         specifier: workspace:*
         version: link:../shared
       dashjs:
@@ -162,10 +162,10 @@ importers:
 
   packages/player-ui:
     dependencies:
-      '@aspect/player-core':
+      aspect-player-core:
         specifier: workspace:*
         version: link:../player-core
-      '@aspect/shared':
+      aspect-player-shared:
         specifier: workspace:*
         version: link:../shared
     devDependencies:

@@ -4,7 +4,7 @@ import {
     EventEmitter,
     createLogger,
     assert,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 
 const logger = createLogger('state-machine');
 

@@ -1,5 +1,5 @@
-import type { QualityLevel, MediaSourceConfig, PlayerError, Unsubscribe } from '@aspect/shared';
-import type { SegmentTiming } from '@aspect/player-core';
+import type { QualityLevel, MediaSourceConfig, PlayerError, Unsubscribe } from 'aspect-player-shared';
+import type { SegmentTiming } from 'aspect-player-core';
 
 /**
  * Source adapter interface.

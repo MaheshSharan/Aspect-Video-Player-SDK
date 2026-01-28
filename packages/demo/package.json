@@ -1,5 +1,5 @@
 {
-    "name": "@aspect/demo",
+    "name": "aspect-demo",
     "private": true,
     "version": "0.0.0",
     "type": "module",
@@ -9,9 +9,9 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@aspect/player-react": "workspace:*",
-        "@aspect/player-core": "workspace:*",
-        "@aspect/shared": "workspace:*",
+        "aspect-player-react": "workspace:*",
+        "aspect-player-core": "workspace:*",
+        "aspect-player-shared": "workspace:*",
         "react": "^18.2.0",
         "react-dom": "^18.2.0"
     },

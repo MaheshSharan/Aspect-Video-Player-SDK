@@ -1,6 +1,6 @@
 import type { UIComponent, PlayerUIConfig } from './types';
-import type { PlayerSnapshot } from '@aspect/player-core';
-import type { QualityLevel } from '@aspect/shared';
+import type { PlayerSnapshot } from 'aspect-player-core';
+import type { QualityLevel } from 'aspect-player-shared';
 import { CSS_CLASSES } from './types';
 
 /**

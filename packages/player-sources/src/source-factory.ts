@@ -4,7 +4,7 @@ import {
     type MediaSourceConfig,
     detectPlatform,
     createLogger,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 import type { SourceAdapter, SourceAdapterConfig } from './types';
 import { HLSAdapter, type HLSAdapterConfig } from './hls-adapter';
 import { HLSNativeAdapter } from './hls-native-adapter';

@@ -7,11 +7,11 @@ export default defineConfig({
     plugins: [react()],
     resolve: {
         alias: {
-            '@aspect/player-react': path.resolve(__dirname, '../player-react/src/index.ts'),
-            '@aspect/player-ui': path.resolve(__dirname, '../player-ui/src/index.ts'),
-            '@aspect/player-core': path.resolve(__dirname, '../player-core/src/index.ts'),
-            '@aspect/player-sources': path.resolve(__dirname, '../player-sources/src/index.ts'),
-            '@aspect/shared': path.resolve(__dirname, '../shared/src/index.ts'),
+            'aspect-player-react': path.resolve(__dirname, '../player-react/src/index.ts'),
+            'aspect-player-ui': path.resolve(__dirname, '../player-ui/src/index.ts'),
+            'aspect-player-core': path.resolve(__dirname, '../player-core/src/index.ts'),
+            'aspect-player-sources': path.resolve(__dirname, '../player-sources/src/index.ts'),
+            'aspect-player-shared': path.resolve(__dirname, '../shared/src/index.ts'),
         }
     },
     server: {

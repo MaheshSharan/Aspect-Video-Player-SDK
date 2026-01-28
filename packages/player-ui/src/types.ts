@@ -1,4 +1,4 @@
-import type { PlayerSnapshot } from '@aspect/player-core';
+import type { PlayerSnapshot } from 'aspect-player-core';
 
 /**
  * UI component interface.

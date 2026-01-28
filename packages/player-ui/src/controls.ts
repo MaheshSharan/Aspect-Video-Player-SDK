@@ -1,7 +1,7 @@
 import type { UIComponent, PlayerUIConfig } from './types';
-import type { PlayerSnapshot } from '@aspect/player-core';
+import type { PlayerSnapshot } from 'aspect-player-core';
 import { CSS_CLASSES } from './types';
-import { formatTime } from '@aspect/shared';
+import { formatTime } from 'aspect-player-shared';
 
 /**
  * Play/Pause button component.

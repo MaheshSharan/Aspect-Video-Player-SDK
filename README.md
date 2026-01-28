@@ -2,20 +2,22 @@
 
 A modular, TypeScript-based video player SDK designed for modern web applications. Features a headless core architecture with pluggable UI and mobile-optimized streaming.
 
+![Aspect Video Player Demo](demo.png)
+
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| `@aspect/player-core` | Core engine with state machine, buffer management, and ABR coordination |
-| `@aspect/player-sources` | Adapters for HLS (hls.js), DASH (dash.js), and native MP4 |
-| `@aspect/player-ui` | Lightweight, dependency-free UI layer with Netflix-style controls |
-| `@aspect/player-react` | React hooks and components |
-| `@aspect/shared` | Shared types and utilities |
+| `aspect-player-core` | Core engine with state machine, buffer management, and ABR coordination |
+| `aspect-player-sources` | Adapters for HLS (hls.js), DASH (dash.js), and native MP4 |
+| `aspect-player-ui` | Lightweight, dependency-free UI layer with Netflix-style controls |
+| `aspect-player-react` | React hooks and components |
+| `aspect-player-shared` | Shared types and utilities |
 
 ## Installation
 
 ```bash
-npm install @aspect/player-react @aspect/player-core @aspect/player-sources
+npm install aspect-player-react aspect-player-core aspect-player-sources
 ```
 
 ## Quick Start
@@ -23,7 +25,7 @@ npm install @aspect/player-react @aspect/player-core @aspect/player-sources
 ### React
 
 ```tsx
-import { AspectPlayer } from '@aspect/player-react';
+import { AspectPlayer } from 'aspect-player-react';
 
 function App() {
   return (
@@ -40,9 +42,9 @@ function App() {
 ### Vanilla JavaScript
 
 ```typescript
-import { CorePlayerEngine } from '@aspect/player-core';
-import { createSourceAdapter } from '@aspect/player-sources';
-import { createPlayerUI } from '@aspect/player-ui';
+import { CorePlayerEngine } from 'aspect-player-core';
+import { createSourceAdapter } from 'aspect-player-sources';
+import { createPlayerUI } from 'aspect-player-ui';
 
 const video = document.querySelector('video');
 
@@ -71,7 +73,8 @@ await engine.play();
 | `volume` | `number` | `1` | Initial volume (0-1) |
 | `title` | `string` | - | Video title displayed in controls |
 | `episodeInfo` | `string` | - | Episode info (e.g., "S1 E1") |
-| `showSubtitles` | `boolean` | `false` | Show subtitle button (only when subtitles available) |
+| `subtitleTracks` | `SubtitleTrackConfig[]` | - | Available subtitle tracks |
+| `thumbnailTrack` | `string` | - | URL to thumbnail VTT for seek preview |
 
 ### PlayerUI Config
 
@@ -113,11 +116,12 @@ The default UI includes:
 - Seek bar with buffer visualization and preview tooltip
 - Time display
 - Title display (center)
+- Quality selector
 - Playback speed selector
 - Picture-in-Picture button
 - Fullscreen toggle
-- Subtitle button (conditional)
-- Subtitle overlay (when tracks provided)
+- Subtitle button (when tracks provided)
+- Subtitle overlay
 
 ## Keyboard Shortcuts
 
@@ -145,4 +149,4 @@ pnpm lint       # Run linter
 
 ## License
 
-MIT
+[MIT](LICENSE)

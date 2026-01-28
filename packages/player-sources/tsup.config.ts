@@ -9,5 +9,5 @@ export default defineConfig({
     treeshake: true,
     splitting: false,
     minify: false,
-    external: ['@aspect/shared', '@aspect/player-core', 'hls.js', 'dashjs'],
+    external: ['aspect-player-shared', 'aspect-player-core', 'hls.js', 'dashjs'],
 });

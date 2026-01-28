@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CorePlayerEngine } from './engine';
-import { PlayerState } from '@aspect/shared';
+import { PlayerState } from 'aspect-player-shared';
 import type { SourceAdapter } from './engine';
 
 // Mock dependencies
-vi.mock('@aspect/shared', async () => {
-    const actual = await vi.importActual('@aspect/shared');
+vi.mock('aspect-player-shared', async () => {
+    const actual = await vi.importActual('aspect-player-shared');
     return {
         ...actual,
         createLogger: () => ({

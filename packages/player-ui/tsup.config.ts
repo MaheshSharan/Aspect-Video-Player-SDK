@@ -9,5 +9,5 @@ export default defineConfig({
     treeshake: true,
     splitting: false,
     minify: false,
-    external: ['@aspect/shared', '@aspect/player-core'],
+    external: ['aspect-player-shared', 'aspect-player-core'],
 });

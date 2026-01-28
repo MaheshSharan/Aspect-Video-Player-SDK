@@ -1,7 +1,22 @@
 {
-    "name": "@aspect/player-react",
+    "name": "aspect-player-react",
     "version": "0.1.0",
-    "description": "React wrapper for stream player SDK",
+    "description": "React wrapper for Aspect Video Player SDK",
+    "license": "MIT",
+    "author": "Mahesh Sharan",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MaheshSharan/Aspect-Video-Player-SDK.git",
+        "directory": "packages/player-react"
+    },
+    "keywords": [
+        "video-player",
+        "react",
+        "hls",
+        "dash",
+        "streaming",
+        "media-player"
+    ],
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
@@ -32,10 +47,10 @@
         "clean": "rimraf dist"
     },
     "dependencies": {
-        "@aspect/shared": "workspace:*",
-        "@aspect/player-core": "workspace:*",
-        "@aspect/player-sources": "workspace:*",
-        "@aspect/player-ui": "workspace:*"
+        "aspect-player-shared": "workspace:*",
+        "aspect-player-core": "workspace:*",
+        "aspect-player-sources": "workspace:*",
+        "aspect-player-ui": "workspace:*"
     },
     "peerDependencies": {
         "react": "^18.0.0",

@@ -9,7 +9,7 @@ import {
     type ABRConfig,
     type ABRState,
     clamp,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 
 const logger = createLogger('abr-controller');
 

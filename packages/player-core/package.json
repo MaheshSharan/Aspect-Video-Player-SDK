@@ -1,7 +1,21 @@
 {
-    "name": "@aspect/player-core",
+    "name": "aspect-player-core",
     "version": "0.1.0",
-    "description": "Headless video player core engine",
+    "description": "Headless video player core engine with HLS/DASH/MP4 support",
+    "license": "MIT",
+    "author": "Mahesh Sharan",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MaheshSharan/Aspect-Video-Player-SDK.git",
+        "directory": "packages/player-core"
+    },
+    "keywords": [
+        "video-player",
+        "hls",
+        "dash",
+        "streaming",
+        "media-player"
+    ],
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
@@ -32,7 +46,7 @@
         "clean": "rimraf dist"
     },
     "dependencies": {
-        "@aspect/shared": "workspace:*"
+        "aspect-player-shared": "workspace:*"
     },
     "devDependencies": {
         "rimraf": "^5.0.5",

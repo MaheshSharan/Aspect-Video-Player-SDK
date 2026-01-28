@@ -16,7 +16,7 @@ import {
     formatPlayerError,
     type RetryState,
     type RetryPolicy,
-} from '@aspect/shared';
+} from 'aspect-player-shared';
 
 const logger = createLogger('error-controller');
 

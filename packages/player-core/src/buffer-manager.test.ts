@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BufferManager, type BufferManagerConfig } from './buffer-manager';
 
 // Mock dependencies
-vi.mock('@aspect/shared', async () => {
-    const actual = await vi.importActual('@aspect/shared');
+vi.mock('aspect-player-shared', async () => {
+    const actual = await vi.importActual('aspect-player-shared');
     return {
         ...actual,
         detectPlatform: () => ({ isMobile: false, isTablet: false }),

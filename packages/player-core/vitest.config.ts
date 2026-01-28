@@ -4,7 +4,7 @@ import path from 'path';
 export default defineConfig({
     resolve: {
         alias: {
-            '@aspect/shared': path.resolve(__dirname, '../shared/src/index.ts'),
+            'aspect-player-shared': path.resolve(__dirname, '../shared/src/index.ts'),
         },
     },
 });

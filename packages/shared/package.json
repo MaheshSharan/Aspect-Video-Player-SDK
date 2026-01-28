@@ -1,7 +1,19 @@
 {
-    "name": "@aspect/shared",
+    "name": "aspect-player-shared",
     "version": "0.1.0",
-    "description": "Shared utilities, types, and logging for stream player SDK",
+    "description": "Shared utilities, types, and logging for Aspect Video Player SDK",
+    "license": "MIT",
+    "author": "Mahesh Sharan",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MaheshSharan/Aspect-Video-Player-SDK.git",
+        "directory": "packages/shared"
+    },
+    "keywords": [
+        "video-player",
+        "streaming",
+        "utilities"
+    ],
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",

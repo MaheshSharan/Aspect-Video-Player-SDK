@@ -1,6 +1,6 @@
-import type { PlayerEngine, PlayerSnapshot } from '@aspect/player-core';
+import type { PlayerEngine, PlayerSnapshot } from 'aspect-player-core';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Unsubscribe } from '@aspect/shared';
+import type { Unsubscribe } from 'aspect-player-shared';
 import type { UIComponent, PlayerUIConfig } from './types';
 import { CSS_CLASSES } from './types';
 import { injectStyles } from './inject-styles';

@@ -1,7 +1,21 @@
 {
-    "name": "@aspect/player-sources",
+    "name": "aspect-player-sources",
     "version": "0.1.0",
-    "description": "HLS, DASH, and MP4 source adapters for stream player",
+    "description": "HLS, DASH, and MP4 source adapters for Aspect Video Player",
+    "license": "MIT",
+    "author": "Mahesh Sharan",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/MaheshSharan/Aspect-Video-Player-SDK.git",
+        "directory": "packages/player-sources"
+    },
+    "keywords": [
+        "hls",
+        "dash",
+        "mp4",
+        "video-streaming",
+        "adaptive-streaming"
+    ],
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
@@ -32,8 +46,8 @@
         "clean": "rimraf dist"
     },
     "dependencies": {
-        "@aspect/shared": "workspace:*",
-        "@aspect/player-core": "workspace:*",
+        "aspect-player-shared": "workspace:*",
+        "aspect-player-core": "workspace:*",
         "hls.js": "^1.5.0",
         "dashjs": "^4.7.0"
     },
