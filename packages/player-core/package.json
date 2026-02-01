@@ -1,6 +1,6 @@
 {
     "name": "aspect-player-core",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "description": "Headless video player core engine with HLS/DASH/MP4 support",
     "license": "MIT",
     "author": "Mahesh Sharan",
@@ -46,7 +46,7 @@
         "clean": "rimraf dist"
     },
     "dependencies": {
-        "aspect-player-shared": "^0.1.3"
+        "aspect-player-shared": "^0.1.4"
     },
     "devDependencies": {
         "rimraf": "^5.0.5",
