@@ -22,7 +22,7 @@ export {
     SkipBackButton,
     SkipForwardButton,
     TitleDisplay,
-    SubtitleButton,
+
 } from './controls';
 
 // Menus
@@ -31,7 +31,8 @@ export {
     SpeedSelector,
     LoadingSpinner,
     ErrorOverlay,
-} from './menus';
+    SubtitleMenu,
+} from './menus_v3';
 
 // Player UI
 export { PlayerUI, createPlayerUI } from './player-ui';

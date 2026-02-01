@@ -183,6 +183,18 @@ export const AspectPlayer = forwardRef<HTMLDivElement, AspectPlayerProps>(
                 })
             );
 
+            subs.push(
+                engine.on('subtitletracks', ({ tracks }) => {
+                    console.log('[AspectPlayer] Subtitle tracks updated:', tracks);
+                })
+            );
+
+            subs.push(
+                engine.on('subtitletrackchange', ({ trackId }) => {
+                    console.log('[AspectPlayer] Subtitle track changed:', trackId);
+                })
+            );
+
             subscriptionsRef.current = subs;
 
             // Create UI if controls enabled
@@ -192,7 +204,7 @@ export const AspectPlayer = forwardRef<HTMLDivElement, AspectPlayerProps>(
                     showQualitySelector: true,
                     showSpeedSelector: true,
                     showPiP: true,
-                    showSubtitles: subtitleTracks && subtitleTracks.length > 0,
+                    showSubtitles: true,
                     title,
                     episodeInfo,
                     subtitleTracks,

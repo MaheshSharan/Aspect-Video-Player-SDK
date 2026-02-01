@@ -237,6 +237,85 @@
   content: '✓ ';
 }
 
+/* Subtitle Menu */
+.player-subtitle-menu .player-menu {
+  min-width: 200px;
+}
+
+.player-subtitle-track-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.player-menu-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 0;
+}
+
+.player-subtitle-offset-section {
+  padding: 8px 16px;
+}
+
+.player-menu-label {
+  font-size: 12px;
+  color: var(--player-text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.player-offset-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-offset-slider {
+  flex: 1;
+  width: 100%;
+}
+
+.player-offset-value {
+  font-family: monospace;
+  font-size: 11px;
+  min-width: 40px;
+  text-align: right;
+  color: var(--player-accent);
+}
+
+.player-offset-reset {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--player-text-muted);
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.player-offset-reset:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--player-text);
+}
+
+.check-icon {
+  display: inline-block;
+  width: 16px;
+  color: var(--player-accent);
+  font-weight: bold;
+}
+
+.check-placeholder {
+  display: inline-block;
+  width: 16px;
+}
+
 /* Loading Spinner */
 .player-spinner {
   position: absolute;

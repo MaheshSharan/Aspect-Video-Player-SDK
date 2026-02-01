@@ -14,9 +14,8 @@ import {
     SkipBackButton,
     SkipForwardButton,
     TitleDisplay,
-    SubtitleButton,
 } from './controls';
-import { QualitySelector, SpeedSelector, LoadingSpinner, ErrorOverlay } from './menus';
+import { QualitySelector, SpeedSelector, LoadingSpinner, ErrorOverlay, SubtitleMenu } from './menus_v3';
 import { SubtitleManager } from './subtitles';
 import { ThumbnailManager } from './thumbnail-preview';
 
@@ -37,6 +36,10 @@ export class PlayerUI {
     private autohideTimeout: ReturnType<typeof setTimeout> | null = null;
     private isControlsVisible = true;
     private destroyed = false;
+
+    // Track management
+    private staticTracks: any[] = [];
+    private dynamicTracks: any[] = [];
 
     constructor(engine: PlayerEngine, config: PlayerUIConfig) {
         // Auto-inject CSS styles on first instantiation
@@ -225,11 +228,32 @@ export class PlayerUI {
             rightGroup.appendChild(qualitySelector.render());
         }
 
-        // Subtitle button (only shown if showSubtitles is explicitly true)
+        // Subtitle menu (only shown if showSubtitles is explicitly true)
         if (this.config.showSubtitles === true) {
-            const subtitleBtn = new SubtitleButton(this.config, () => this.handleSubtitles());
-            this.components.push(subtitleBtn);
-            rightGroup.appendChild(subtitleBtn.render());
+            const subtitleMenu = new SubtitleMenu(
+                this.config,
+                (trackId: string | null) => {
+                    if (trackId === null) {
+                        this.subtitleManager?.disable();
+                    } else {
+                        void this.subtitleManager?.loadTrack(trackId);
+                    }
+                },
+                (offset: number) => {
+                    this.subtitleManager?.setOffset(offset);
+                }
+            );
+
+            // Initial track setup for menu
+            if (this.subtitleManager) {
+                subtitleMenu.setTracks(
+                    this.subtitleManager.getTracks(),
+                    this.subtitleManager.isEnabled() ? this.subtitleManager.getActiveTrackId() : null
+                );
+            }
+
+            this.components.push(subtitleMenu);
+            rightGroup.appendChild(subtitleMenu.render());
         }
 
         // Speed selector (optional)
@@ -264,13 +288,24 @@ export class PlayerUI {
         if (this.config.subtitleTracks && this.config.subtitleTracks.length > 0) {
             this.subtitleManager = new SubtitleManager(this.config);
             this.subtitleManager.createOverlay(this.container);
-            this.subtitleManager.setTracks(this.config.subtitleTracks.map(t => ({
+
+            // Store static tracks
+            this.staticTracks = this.config.subtitleTracks.map(t => ({
                 id: t.id,
                 label: t.label,
                 language: t.language,
                 url: t.url,
                 default: t.default,
-            })));
+            }));
+
+            this.updateSubtitleTracks();
+        } else {
+            // Even if no static tracks, we might get dynamic ones, so initialize manager if showSubtitles is true
+            // But wait, if showSubtitles is false, we don't show menu.
+            if (this.config.showSubtitles) {
+                this.subtitleManager = new SubtitleManager(this.config);
+                this.subtitleManager.createOverlay(this.container);
+            }
         }
 
         // Initialize thumbnail manager
@@ -315,6 +350,29 @@ export class PlayerUI {
 
         this.subscriptions.push(
             this.engine.on('error', () => this.updateComponents())
+        );
+
+        this.subscriptions.push(
+            this.engine.on('subtitletracks', (data) => {
+                this.dynamicTracks = data.tracks.map(t => ({
+                    id: t.id,
+                    label: t.label,
+                    language: t.language,
+                    url: t.url,
+                    default: t.default,
+                }));
+                this.updateSubtitleTracks();
+            })
+        );
+
+        this.subscriptions.push(
+            this.engine.on('subtitletrackchange', (data) => {
+                // If the engine changed tracks (e.g. from auto selection), update manager
+                if (this.subtitleManager && data.trackId) {
+                    // This might need to check if it's already selected to avoid loop
+                    // But SubtitleManager handles one-way sync usually.
+                }
+            })
         );
 
         // Mouse events for autohide
@@ -420,6 +478,16 @@ export class PlayerUI {
 
         // Update subtitles
         this.subtitleManager?.update(snapshot);
+
+        // Update menu state if needed (mainly for track active state changes if triggered externally)
+        // Find subtitle menu component
+        const subtitleMenu = this.components.find(c => c.name === 'subtitle-menu') as SubtitleMenu | undefined;
+        if (subtitleMenu && this.subtitleManager) {
+            subtitleMenu.setTracks(
+                this.subtitleManager.getTracks(),
+                this.subtitleManager.isEnabled() ? this.subtitleManager.getActiveTrackId() : null
+            );
+        }
     }
 
     private updateControlsVisibility(): void {
@@ -496,12 +564,7 @@ export class PlayerUI {
         this.engine.seek(newTime);
     }
 
-    private handleSubtitles(): void {
-        if (this.subtitleManager === null) return;
 
-        // Toggle subtitles on/off
-        this.subtitleManager.toggle();
-    }
 
 
     private handleMouseMove = (): void => {
@@ -529,6 +592,22 @@ export class PlayerUI {
             this.showControls();
         }
     };
+    private updateSubtitleTracks(): void {
+        if (!this.subtitleManager) return;
+
+        const allTracks = [...this.staticTracks, ...this.dynamicTracks];
+        console.log('[PlayerUI] updateSubtitleTracks called. Static:', this.staticTracks.length, 'Dynamic:', this.dynamicTracks.length, 'Total:', allTracks.length);
+
+        // If we have tracks but manager has none, or they changed
+        this.subtitleManager.setTracks(allTracks, this.subtitleManager.getActiveTrackId());
+
+        // Update menu if exists
+        const subtitleMenu = this.components.find(c => c.name === 'subtitle-menu') as SubtitleMenu | undefined;
+        if (subtitleMenu) {
+            console.log('[PlayerUI] Updating subtitle menu with tracks:', allTracks);
+            subtitleMenu.setTracks(allTracks, this.subtitleManager.getActiveTrackId());
+        }
+    }
 }
 
 /**

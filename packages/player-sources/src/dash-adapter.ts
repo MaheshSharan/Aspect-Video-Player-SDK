@@ -8,9 +8,10 @@ import {
     type PlayerError,
     type Unsubscribe,
     detectPlatform,
+    type SubtitleTrack,
 } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
-import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback } from './types';
+import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback } from './types';
 
 // dashjs type imports
 import type {
@@ -59,6 +60,10 @@ export class DASHAdapter implements SourceAdapter {
 
     private readonly segmentCallbacks: SegmentLoadedCallback[] = [];
     private readonly errorCallbacks: ErrorCallback[] = [];
+    private readonly subtitleCallbacks: SubtitleTracksCallback[] = [];
+
+    private subtitleTracks: SubtitleTrack[] = [];
+    private currentSubtitleTrackId: string | null = null;
 
     private destroyed = false;
     private dashjs: typeof import('dashjs') | null = null;
@@ -204,6 +209,59 @@ export class DASHAdapter implements SourceAdapter {
         };
     }
 
+    getSubtitleTracks(): SubtitleTrack[] {
+        return this.subtitleTracks;
+    }
+
+    setSubtitleTrack(trackId: string | null): void {
+        this.currentSubtitleTrackId = trackId;
+
+        if (this.dashPlayer === null) return;
+
+        if (trackId === null) {
+            this.dashPlayer.setTextTrack(-1); // Disable subtitles
+        } else {
+            const index = this.subtitleTracks.findIndex(t => t.id === trackId);
+            if (index !== -1) {
+                this.dashPlayer.setTextTrack(index);
+            }
+        }
+    }
+
+    onSubtitleTracksChanged(callback: SubtitleTracksCallback): Unsubscribe {
+        this.subtitleCallbacks.push(callback);
+        if (this.subtitleTracks.length > 0) {
+            callback(this.subtitleTracks);
+        }
+        return () => {
+            const idx = this.subtitleCallbacks.indexOf(callback);
+            if (idx >= 0) {
+                this.subtitleCallbacks.splice(idx, 1);
+            }
+        };
+    }
+
+    private updateSubtitleTracks(): void {
+        if (this.dashPlayer === null) return;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const dashTracks: any[] = this.dashPlayer.getTracksFor('text'); // dash.js specific
+
+        this.subtitleTracks = dashTracks.map((track, i) => ({
+            id: `dash-text-${i}`,
+            label: track.labels?.[0]?.text || track.lang || `Track ${i + 1}`,
+            language: track.lang || 'unknown',
+            default: false,
+            url: '' // Managed by dash.js
+        }));
+
+        logger.debug(`DASH Adapter text tracks updated: ${this.subtitleTracks.length}`);
+
+        for (const cb of this.subtitleCallbacks) {
+            cb(this.subtitleTracks);
+        }
+    }
+
     destroy(): void {
         if (this.destroyed) return;
 
@@ -215,10 +273,11 @@ export class DASHAdapter implements SourceAdapter {
             this.dashPlayer = null;
         }
 
-        this._video = null;
         this.levels = [];
         this.segmentCallbacks.length = 0;
         this.errorCallbacks.length = 0;
+        this.subtitleCallbacks.length = 0;
+        this.subtitleTracks = [];
         this.events.removeAllListeners();
     }
 
@@ -321,6 +380,14 @@ export class DASHAdapter implements SourceAdapter {
                     logger.error('Error callback error:', err);
                 }
             }
+        });
+        // Text tracks added/removed
+        this.dashPlayer.on(this.dashjs.MediaPlayer.events.TEXT_TRACKS_ADDED, () => {
+            this.updateSubtitleTracks();
+        });
+
+        this.dashPlayer.on(this.dashjs.MediaPlayer.events.TEXT_TRACK_ADDED, () => {
+            this.updateSubtitleTracks();
         });
     }
 

@@ -12,6 +12,7 @@ import {
     ErrorCode,
     clamp,
     sleep,
+    type SubtitleTrack,
 } from 'aspect-player-shared';
 
 import type {
@@ -59,6 +60,15 @@ export interface SourceAdapter {
     /** Register error handler */
     onError(callback: (error: PlayerError) => void): Unsubscribe;
 
+    /** Get available subtitle tracks */
+    getSubtitleTracks(): SubtitleTrack[];
+
+    /** Set subtitle track */
+    setSubtitleTrack(trackId: string | null): void;
+
+    /** Register subtitle tracks changed callback */
+    onSubtitleTracksChanged(callback: (tracks: SubtitleTrack[]) => void): Unsubscribe;
+
     /** Destroy the adapter */
     destroy(): void;
 }
@@ -84,6 +94,9 @@ export class CorePlayerEngine implements PlayerEngine {
     private sourceAdapterFactory: SourceAdapterFactory | null = null;
     private sourceAdapter: SourceAdapter | null = null;
     private currentSource: MediaSourceConfig | null = null;
+
+    private subtitleTracks: SubtitleTrack[] = [];
+    private currentSubtitleTrack: SubtitleTrack | null = null;
 
     private readonly subscriptions: Unsubscribe[] = [];
     private destroyed = false;
@@ -177,6 +190,22 @@ export class CorePlayerEngine implements PlayerEngine {
 
                 this.bufferManager.reset();
                 this.abrController.reset();
+
+                // Setup subtitle handler
+                this.subscriptions.push(
+                    adapter.onSubtitleTracksChanged((tracks) => {
+                        console.log('[CorePlayerEngine] Received subtitle tracks from adapter:', tracks);
+                        this.subtitleTracks = tracks;
+                        this.events.emit('subtitletracks', { tracks });
+                    })
+                );
+
+                // Initial subtitle tracks (if any already loaded or synchronous)
+                this.subtitleTracks = adapter.getSubtitleTracks();
+                if (this.subtitleTracks.length > 0) {
+                    console.log('[CorePlayerEngine] Initial subtitle tracks found:', this.subtitleTracks);
+                    this.events.emit('subtitletracks', { tracks: this.subtitleTracks });
+                }
 
             } catch (error) {
                 void this.handleError(this.wrapError(error));
@@ -303,6 +332,8 @@ export class CorePlayerEngine implements PlayerEngine {
             currentQuality: this.abrController.getState().currentLevel,
             abrEnabled: this.abrController.getState().mode === 'auto',
             error: this.errorController.getLastError() ?? undefined,
+            subtitleTracks: this.subtitleTracks,
+            currentSubtitleTrack: this.currentSubtitleTrack,
         };
     }
 
@@ -343,6 +374,26 @@ export class CorePlayerEngine implements PlayerEngine {
         }
 
         this.sourceAdapter?.setQualityLevel(levelIndex);
+    }
+
+    setSubtitleTrack(trackId: string | null): void {
+        this.assertNotDestroyed();
+
+        // Find track object
+        if (trackId === null) {
+            this.currentSubtitleTrack = null;
+        } else {
+            const track = this.subtitleTracks.find(t => t.id === trackId);
+            if (track) {
+                this.currentSubtitleTrack = track;
+            } else {
+                logger.warn(`Subtitle track not found: ${trackId}`);
+                return;
+            }
+        }
+
+        this.sourceAdapter?.setSubtitleTrack(trackId);
+        this.events.emit('subtitletrackchange', { trackId });
     }
 
     setAutoQuality(enabled: boolean): void {

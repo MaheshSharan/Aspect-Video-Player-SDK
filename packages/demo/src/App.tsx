@@ -44,6 +44,7 @@ function App() {
                         source={{ url: currentStream.url }}
                         title={currentStream.name}
                         autoplay={false}
+                        subtitleTracks={currentStream.subtitles}
                         controls={true}
                         debug={true}
                         onReady={() => log('Player ready')}

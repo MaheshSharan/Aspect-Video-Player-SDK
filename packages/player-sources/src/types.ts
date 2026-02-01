@@ -1,4 +1,4 @@
-import type { QualityLevel, MediaSourceConfig, PlayerError, Unsubscribe } from 'aspect-player-shared';
+import type { QualityLevel, MediaSourceConfig, PlayerError, Unsubscribe, SubtitleTrack } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
 
 /**
@@ -44,6 +44,17 @@ export interface SourceAdapter {
     getCurrentQualityLevel(): number;
 
     /**
+     * Get available subtitle tracks.
+     */
+    getSubtitleTracks(): SubtitleTrack[];
+
+    /**
+     * Set subtitle track.
+     * null for off/none
+     */
+    setSubtitleTrack(trackId: string | null): void;
+
+    /**
      * Register callback for segment load timing (for ABR).
      */
     onSegmentLoaded(callback: (timing: SegmentTiming) => void): Unsubscribe;
@@ -52,6 +63,11 @@ export interface SourceAdapter {
      * Register callback for errors.
      */
     onError(callback: (error: PlayerError) => void): Unsubscribe;
+
+    /**
+     * Register callback for subtitle track updates.
+     */
+    onSubtitleTracksChanged(callback: (tracks: SubtitleTrack[]) => void): Unsubscribe;
 
     /**
      * Destroy the adapter and release resources.
@@ -78,3 +94,4 @@ export interface SourceAdapterConfig {
  */
 export type SegmentLoadedCallback = (timing: SegmentTiming) => void;
 export type ErrorCallback = (error: PlayerError) => void;
+export type SubtitleTracksCallback = (tracks: SubtitleTrack[]) => void;

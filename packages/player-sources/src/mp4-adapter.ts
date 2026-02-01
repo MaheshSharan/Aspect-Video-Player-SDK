@@ -6,9 +6,10 @@ import {
     type MediaSourceConfig,
     type PlayerError,
     type Unsubscribe,
+    type SubtitleTrack,
 } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
-import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback } from './types';
+import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback } from './types';
 
 const logger = createLogger('mp4-adapter');
 
@@ -145,6 +146,69 @@ export class MP4Adapter implements SourceAdapter {
         };
     }
 
+    private subtitleTracks: SubtitleTrack[] = [];
+    private currentSubtitleTrackId: string | null = null;
+    private readonly subtitleCallbacks: SubtitleTracksCallback[] = [];
+
+    getSubtitleTracks(): SubtitleTrack[] {
+        return this.subtitleTracks;
+    }
+
+    setSubtitleTrack(trackId: string | null): void {
+        this.currentSubtitleTrackId = trackId;
+
+        if (this.video === null) return;
+
+        // Update native tracks mode
+        const tracks = Array.from(this.video.textTracks);
+        for (let i = 0; i < tracks.length; i++) {
+            const track = tracks[i];
+            const currentId = `text-track-${i}`; // ID generated during load
+
+            // If trackId matches, show it. Else hide it.
+            // Note: If trackId is null (off), all tracks become hidden.
+            if (track) {
+                if (trackId !== null && currentId === trackId) {
+                    track.mode = 'showing';
+                } else {
+                    track.mode = 'hidden';
+                }
+            }
+        }
+    }
+
+    onSubtitleTracksChanged(callback: SubtitleTracksCallback): Unsubscribe {
+        this.subtitleCallbacks.push(callback);
+        if (this.subtitleTracks.length > 0) {
+            callback(this.subtitleTracks);
+        }
+        return () => {
+            const idx = this.subtitleCallbacks.indexOf(callback);
+            if (idx >= 0) {
+                this.subtitleCallbacks.splice(idx, 1);
+            }
+        };
+    }
+
+    private updateSubtitleTracks(): void {
+        if (this.video === null) return;
+
+        const tracks = Array.from(this.video.textTracks);
+        this.subtitleTracks = tracks.map((track, i) => ({
+            id: `text-track-${i}`,
+            label: track.label || `Track ${i + 1}`,
+            language: track.language,
+            url: '', // Native tracks don't expose URL directly here easily, nor is it needed
+            default: track.mode === 'showing' || track.mode === 'hidden' // loosely defined default
+        }));
+
+        logger.debug(`MP4 Adapter tracks updated: ${this.subtitleTracks.length}`);
+
+        for (const cb of this.subtitleCallbacks) {
+            cb(this.subtitleTracks);
+        }
+    }
+
     destroy(): void {
         if (this.destroyed) return;
 
@@ -165,6 +229,8 @@ export class MP4Adapter implements SourceAdapter {
         this.sourceUrl = '';
         this.segmentCallbacks.length = 0;
         this.errorCallbacks.length = 0;
+        this.subtitleCallbacks.length = 0;
+        this.subtitleTracks = [];
     }
 
     /**
@@ -236,6 +302,23 @@ export class MP4Adapter implements SourceAdapter {
 
         this.video.addEventListener('progress', onProgress);
         this.boundHandlers.push(() => this.video?.removeEventListener('progress', onProgress));
+
+        // Subtitle track detection
+        if (this.video.textTracks) {
+            const onAddTrack = () => this.updateSubtitleTracks();
+            const onRemoveTrack = () => this.updateSubtitleTracks();
+
+            this.video.textTracks.addEventListener('addtrack', onAddTrack);
+            this.video.textTracks.addEventListener('removetrack', onRemoveTrack);
+
+            this.boundHandlers.push(() => {
+                this.video?.textTracks.removeEventListener('addtrack', onAddTrack);
+                this.video?.textTracks.removeEventListener('removetrack', onRemoveTrack);
+            });
+
+            // Initial check
+            this.updateSubtitleTracks();
+        }
     }
 
     /**

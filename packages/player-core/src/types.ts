@@ -8,6 +8,7 @@ import {
     type PlayerError,
     type PlayerConfig,
     type Unsubscribe,
+    type SubtitleTrack,
 } from 'aspect-player-shared';
 
 /**
@@ -46,6 +47,12 @@ export interface PlayerEventMap {
 
     /** Seek completed */
     seeked: { position: number };
+
+    /** Subtitle tracks available */
+    subtitletracks: { tracks: readonly SubtitleTrack[] };
+
+    /** Subtitle track changed */
+    subtitletrackchange: { trackId: string | null };
 
     /** Waiting for data */
     waiting: void;
@@ -93,6 +100,8 @@ export interface PlayerSnapshot {
     readonly currentQuality: QualityLevel | undefined;
     readonly abrEnabled: boolean;
     readonly error: PlayerError | undefined;
+    readonly subtitleTracks: readonly SubtitleTrack[];
+    readonly currentSubtitleTrack: SubtitleTrack | null;
 }
 
 /**
@@ -185,6 +194,9 @@ export interface PlayerEngine {
     // Quality control
     setQuality(levelIndex: number): void;
     setAutoQuality(enabled: boolean): void;
+
+    // Subtitles
+    setSubtitleTrack(trackId: string | null): void;
 
     // Picture-in-Picture
     requestPictureInPicture(): Promise<void>;

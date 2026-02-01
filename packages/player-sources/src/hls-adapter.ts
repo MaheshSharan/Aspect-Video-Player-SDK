@@ -10,9 +10,10 @@ import {
     type PlayerError,
     type Unsubscribe,
     detectPlatform,
+    type SubtitleTrack,
 } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
-import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback } from './types';
+import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback } from './types';
 
 const logger = createLogger('hls-adapter');
 
@@ -59,6 +60,10 @@ export class HLSAdapter implements SourceAdapter {
 
     private readonly segmentCallbacks: SegmentLoadedCallback[] = [];
     private readonly errorCallbacks: ErrorCallback[] = [];
+    private readonly subtitleCallbacks: SubtitleTracksCallback[] = [];
+
+    private subtitleTracks: SubtitleTrack[] = [];
+    private currentSubtitleTrackId: string | null = null;
 
     private destroyed = false;
     private startPosition = 0;
@@ -206,6 +211,39 @@ export class HLSAdapter implements SourceAdapter {
         };
     }
 
+    getSubtitleTracks(): SubtitleTrack[] {
+        return this.subtitleTracks;
+    }
+
+    setSubtitleTrack(trackId: string | null): void {
+        if (this.hls === null) return;
+
+        if (trackId === null) {
+            this.hls.subtitleTrack = -1;
+            this.currentSubtitleTrackId = null;
+        } else {
+            const index = this.subtitleTracks.findIndex(t => t.id === trackId);
+            if (index !== -1) {
+                this.hls.subtitleTrack = index;
+                this.currentSubtitleTrackId = trackId;
+            }
+        }
+    }
+
+    onSubtitleTracksChanged(callback: SubtitleTracksCallback): Unsubscribe {
+        this.subtitleCallbacks.push(callback);
+        // Immediately invoke with current tracks if available
+        if (this.subtitleTracks.length > 0) {
+            callback(this.subtitleTracks);
+        }
+        return () => {
+            const idx = this.subtitleCallbacks.indexOf(callback);
+            if (idx >= 0) {
+                this.subtitleCallbacks.splice(idx, 1);
+            }
+        };
+    }
+
     destroy(): void {
         if (this.destroyed) return;
 
@@ -221,6 +259,8 @@ export class HLSAdapter implements SourceAdapter {
         this.levels = [];
         this.segmentCallbacks.length = 0;
         this.errorCallbacks.length = 0;
+        this.subtitleCallbacks.length = 0;
+        this.subtitleTracks = [];
         this.events.removeAllListeners();
     }
 
@@ -233,7 +273,9 @@ export class HLSAdapter implements SourceAdapter {
         // Base configuration tuned for production
         const config: Partial<HlsConfig> = {
             // Debug mode
-            debug: this.config.debug ?? false,
+            debug: false,
+            // render subtitles in browser
+            renderTextTracksNatively: true,
 
             // Buffer settings (use our buffer manager limits)
             maxBufferLength: this.config.maxBufferLength ?? (isMobile ? 20 : 40),
@@ -337,6 +379,11 @@ export class HLSAdapter implements SourceAdapter {
             this.buildQualityLevels();
         });
 
+        // Subtitles updated
+        this.hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, () => {
+            this.updateSubtitleTracks();
+        });
+
         // Error handling
         this.hls.on(Hls.Events.ERROR, (_, data: ErrorData) => {
             const error = this.mapHlsError(data);
@@ -369,6 +416,34 @@ export class HLSAdapter implements SourceAdapter {
                 }
             }
         });
+    }
+
+    private updateSubtitleTracks(): void {
+        if (this.hls === null) return;
+
+        // Map hls.js tracks to our SubtitleTrack format
+        // Note: hls.subtitleTracks might be undefined in some versions/contexts, so check existence
+        const tracks = this.hls.subtitleTracks || [];
+        console.log('[HLSAdapter] Raw subtitle tracks from hls.js:', tracks);
+
+        this.subtitleTracks = tracks.map((track, index) => ({
+            id: `hls-${index}`,
+            label: track.name || `Track ${index + 1}`,
+            language: track.lang || 'unknown',
+            default: track.default,
+            url: '' // HLS tracks are internal, no direct URL usually required for the UI manager unless we extract it
+        }));
+
+        console.log('[HLSAdapter] Mapped subtitle tracks:', this.subtitleTracks);
+        logger.debug(`Subtitle tracks updated: ${this.subtitleTracks.length} tracks`);
+
+        for (const callback of this.subtitleCallbacks) {
+            try {
+                callback(this.subtitleTracks);
+            } catch (e) {
+                logger.error('Subtitle callback error:', e);
+            }
+        }
     }
 
     /**

@@ -50,6 +50,8 @@ export interface MediaSourceConfig {
     readonly headers?: Readonly<Record<string, string>>;
     /** Whether to preload without playing */
     readonly preload?: boolean;
+    /** External subtitle tracks */
+    readonly subtitleTracks?: readonly SubtitleTrack[];
 }
 
 /**
@@ -70,6 +72,22 @@ export interface QualityLevel {
     readonly frameRate: number | undefined;
     /** Human-readable label */
     readonly label: string;
+}
+
+/**
+ * Text track (subtitles/captions) information.
+ */
+export interface SubtitleTrack {
+    /** Unique identifier */
+    readonly id: string;
+    /** Language code (e.g., 'en', 'es') */
+    readonly language: string;
+    /** Human-readable label */
+    readonly label: string;
+    /** Source URL (optional, for external tracks) */
+    readonly url?: string;
+    /** Whether this is the default track */
+    readonly default?: boolean;
 }
 
 /**

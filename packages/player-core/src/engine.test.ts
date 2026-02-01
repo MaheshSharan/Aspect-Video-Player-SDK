@@ -45,6 +45,9 @@ describe('CorePlayerEngine', () => {
             getCurrentQualityLevel: vi.fn().mockReturnValue(0),
             onSegmentLoaded: vi.fn().mockReturnValue(() => { }),
             onError: vi.fn().mockReturnValue(() => { }),
+            getSubtitleTracks: vi.fn().mockReturnValue([]),
+            setSubtitleTrack: vi.fn(),
+            onSubtitleTracksChanged: vi.fn().mockReturnValue(() => { }),
             destroy: vi.fn(),
         };
 

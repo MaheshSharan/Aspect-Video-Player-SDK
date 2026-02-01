@@ -14,6 +14,7 @@ export type {
     Unsubscribe,
     VideoElementAdapter,
     TimeRangesLike,
+    SubtitleTrack,
 } from './types';
 
 export {

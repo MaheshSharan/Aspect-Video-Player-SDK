@@ -31,19 +31,39 @@ export class SubtitleManager {
     private overlay: HTMLDivElement | null = null;
     private currentCue: SubtitleCue | null = null;
     private enabled = false;
+    private offset = 0; // Sync offset in seconds
 
     constructor(private readonly config: PlayerUIConfig) { }
 
     /**
      * Set available subtitle tracks.
      */
-    setTracks(tracks: SubtitleTrack[]): void {
+    setTracks(tracks: SubtitleTrack[], activeId?: string | null): void {
         this.tracks = tracks;
 
-        // Auto-select default track if available
+        if (activeId !== undefined) {
+            if (activeId !== null) {
+                void this.loadTrack(activeId);
+            } else {
+                this.activeTrackId = null;
+                this.disable();
+            }
+            return;
+        }
+
+        // Auto-select default track if available, otherwise try to find English
         const defaultTrack = tracks.find(t => t.default);
         if (defaultTrack !== undefined) {
             void this.loadTrack(defaultTrack.id);
+        } else {
+            // Smart select: find 'en' or label containing 'English'
+            const englishTrack = tracks.find(t =>
+                t.language === 'en' ||
+                t.label.toLowerCase().includes('english')
+            );
+            if (englishTrack !== undefined) {
+                void this.loadTrack(englishTrack.id);
+            }
         }
     }
 
@@ -62,12 +82,42 @@ export class SubtitleManager {
     }
 
     /**
+     * Set subtitle sync offset in seconds.
+     * Positive value delays subtitles (moves them later).
+     * Negative value hastens subtitles (moves them earlier).
+     */
+    setOffset(offset: number): void {
+        this.offset = offset;
+        // Force update if needed
+        if (this.currentCue) {
+            this.currentCue = null; // Invalidate to force re-check on next update
+        }
+    }
+
+    /**
+     * Get current sync offset.
+     */
+    getOffset(): number {
+        return this.offset;
+    }
+
+    /**
      * Load and activate a subtitle track.
      */
     async loadTrack(trackId: string): Promise<void> {
         const track = this.tracks.find(t => t.id === trackId);
         if (track === undefined) {
             console.warn(`Subtitle track not found: ${trackId}`);
+            return;
+        }
+
+        // If no URL (e.g. HLS embedded), assume adapter handles native rendering or cue injection
+        if (!track.url) {
+            console.log(`[SubtitleManager] Track ${trackId} has no URL. Assuming native/adapter rendering.`);
+            this.activeTrackId = trackId;
+            this.enabled = true;
+            this.cues = []; // Clear custom cues 
+            this.hideOverlay(); // Ensure custom overlay is hidden
             return;
         }
 
@@ -142,8 +192,16 @@ export class SubtitleManager {
 
         const time = snapshot.currentTime;
 
-        // Find cue for current time
-        const cue = this.findCue(time);
+        // Find cue for current time (adjusted by offset)
+        // If offset is +1s, it means the subtitle should appear 1 second LATER.
+        // So we look up the cue for (currentTime - offset).
+        // Example: At t=10s, with offset +2s (delay), we want the subtitle from t=8s to show?
+        // NO. If audio is ahead of subtitles, subtitles are "early". We need to DELAY subtitles.
+        // Meaning: Subtitle scheduled for 10s should show at 12s.
+        // So at 12s, we want to find the cue that has startTime=10s.
+        // 12s - 2s = 10s. Correct.
+        const lookupTime = time - this.offset;
+        const cue = this.findCue(lookupTime);
 
         if (cue !== this.currentCue) {
             this.currentCue = cue;

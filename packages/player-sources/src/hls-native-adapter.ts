@@ -6,9 +6,10 @@ import {
     type MediaSourceConfig,
     type PlayerError,
     type Unsubscribe,
+    type SubtitleTrack,
 } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
-import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback } from './types';
+import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback } from './types';
 
 const logger = createLogger('hls-native-adapter');
 
@@ -144,6 +145,20 @@ export class HLSNativeAdapter implements SourceAdapter {
                 this.errorCallbacks.splice(idx, 1);
             }
         };
+    }
+
+    getSubtitleTracks(): SubtitleTrack[] {
+        // Native HLS subtitle tracks are handled by the browser
+        // We might be able to read textTracks from video element
+        return [];
+    }
+
+    setSubtitleTrack(_trackId: string | null): void {
+        // Native HLS subtitle selection is handled by the browser
+    }
+
+    onSubtitleTracksChanged(_callback: SubtitleTracksCallback): Unsubscribe {
+        return () => { };
     }
 
     destroy(): void {
