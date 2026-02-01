@@ -1,6 +1,6 @@
 {
     "name": "aspect-player-sources",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "HLS, DASH, and MP4 source adapters for Aspect Video Player",
     "license": "MIT",
     "author": "Mahesh Sharan",
@@ -46,8 +46,8 @@
         "clean": "rimraf dist"
     },
     "dependencies": {
-        "aspect-player-shared": "^0.1.4",
-        "aspect-player-core": "^0.1.4",
+        "aspect-player-shared": "^0.1.5",
+        "aspect-player-core": "^0.1.5",
         "hls.js": "^1.5.0",
         "dashjs": "^4.7.0"
     },

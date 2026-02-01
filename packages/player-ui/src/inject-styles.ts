@@ -508,7 +508,126 @@ input[type="range"].player-slider::-moz-range-progress {
   .player-spinner svg {
     animation: none;
   }
-}`;
+}
+
+/* Subtitle Menu Enhancements */
+.subtitle-track-list {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--player-text-muted) transparent;
+}
+
+.subtitle-track-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.subtitle-track-list::-webkit-scrollbar-thumb {
+  background-color: var(--player-text-muted);
+  border-radius: 3px;
+}
+
+.subtitle-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+}
+
+.subtitle-menu-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--player-text);
+}
+
+.subtitle-settings-btn {
+  background: transparent;
+  border: none;
+  color: var(--player-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.subtitle-settings-btn:hover {
+  color: var(--player-text);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.subtitle-settings-panel {
+  padding: 12px;
+}
+
+.subtitle-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--player-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 12px;
+  width: 100%;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+}
+
+.subtitle-back-btn:hover {
+  color: var(--player-accent);
+}
+
+.offset-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.offset-label {
+  font-size: 13px;
+  color: var(--player-text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.offset-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.offset-value {
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--player-accent);
+  min-width: 48px;
+  text-align: right;
+}
+
+.offset-reset {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--player-text);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.offset-reset:hover {
+  border-color: var(--player-text);
+  background: rgba(255, 255, 255, 0.1);
+}
+`;
 
 let stylesInjected = false;
 let styleElement: HTMLStyleElement | null = null;

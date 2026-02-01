@@ -404,13 +404,50 @@ export class SubtitleMenu implements UIComponent {
         this.element = null;
     }
 
+    private showSettings = false;
+
     private updateMenu(): void {
         if (this.menu === null) return;
 
         const prefix = this.config.classPrefix ?? '';
         this.menu.innerHTML = '';
 
-        // --- Track List Section ---
+        if (this.showSettings) {
+            this.renderSettingsView(prefix);
+        } else {
+            this.renderTrackListView(prefix);
+        }
+    }
+
+    private renderTrackListView(prefix: string): void {
+        if (this.menu === null) return;
+
+        // --- Header ---
+        const header = document.createElement('div');
+        header.className = `${prefix}subtitle-menu-header`;
+
+        const title = document.createElement('span');
+        title.className = `${prefix}subtitle-menu-title`;
+        title.textContent = 'Subtitles';
+        header.appendChild(title);
+
+        // Settings button (only if a track is selected)
+        if (this.activeTrackId !== null) {
+            const settingsBtn = document.createElement('button');
+            settingsBtn.className = `${prefix}subtitle-settings-btn`;
+            settingsBtn.innerHTML = this.getSettingsIcon();
+            settingsBtn.title = 'Subtitle Settings';
+            settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showSettings = true;
+                this.updateMenu();
+            });
+            header.appendChild(settingsBtn);
+        }
+
+        this.menu.appendChild(header);
+
+        // --- Track List ---
         const trackList = document.createElement('div');
         trackList.className = `${prefix}subtitle-track-list`;
 
@@ -432,62 +469,81 @@ export class SubtitleMenu implements UIComponent {
         }
 
         this.menu.appendChild(trackList);
+    }
 
-        // --- Offset Section ---
-        // Only show offset controls if a track is selected
-        if (this.activeTrackId !== null) {
-            const separator = document.createElement('div');
-            separator.className = `${prefix}menu-separator`;
-            this.menu.appendChild(separator);
+    private renderSettingsView(prefix: string): void {
+        if (this.menu === null) return;
 
-            const offsetSection = document.createElement('div');
-            offsetSection.className = `${prefix}subtitle-offset-section`;
+        const panel = document.createElement('div');
+        panel.className = `${prefix}subtitle-settings-panel`;
 
-            const offsetLabel = document.createElement('div');
-            offsetLabel.className = `${prefix}menu-label`;
-            offsetLabel.textContent = 'Sync Offset';
-            offsetSection.appendChild(offsetLabel);
+        // Back button
+        const backBtn = document.createElement('button');
+        backBtn.className = `${prefix}subtitle-back-btn`;
+        backBtn.innerHTML = '&#8592; Back to Tracks';
+        backBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showSettings = false;
+            this.updateMenu();
+        });
+        panel.appendChild(backBtn);
 
-            const controlsRow = document.createElement('div');
-            controlsRow.className = `${prefix}offset-controls`;
+        // Offset Controls
+        const controlGroup = document.createElement('div');
+        controlGroup.className = `${prefix}offset-control-group`;
 
-            // Slider
-            const slider = document.createElement('input');
-            slider.type = 'range';
-            slider.min = '-5';
-            slider.max = '5';
-            slider.step = '0.1';
-            slider.value = this.offset.toString();
-            slider.className = `${prefix}offset-slider`;
-            slider.addEventListener('input', (e) => {
-                const val = parseFloat((e.target as HTMLInputElement).value);
-                this.onOffsetChange(val);
-                this.updateOffsetDisplay();
-            });
+        const headerRow = document.createElement('div');
+        headerRow.className = `${prefix}offset-label`;
+        headerRow.innerHTML = '<span>Sync Offset</span>';
+        controlGroup.appendChild(headerRow);
 
-            // Value display
-            const valueDisplay = document.createElement('span');
-            valueDisplay.className = `${prefix}offset-value`;
-            valueDisplay.textContent = this.formatOffset(this.offset);
+        const sliderContainer = document.createElement('div');
+        sliderContainer.className = `${prefix}offset-slider-container`;
 
-            // Reset button
-            const resetBtn = document.createElement('button');
-            resetBtn.className = `${prefix}offset-reset`;
-            resetBtn.innerHTML = '&#x21ba;'; // Refresh icon arrow
-            resetBtn.title = 'Reset Offset';
-            resetBtn.addEventListener('click', () => {
-                this.onOffsetChange(0);
-                slider.value = '0';
-                this.updateOffsetDisplay();
-            });
+        // Reset button
+        const resetBtn = document.createElement('button');
+        resetBtn.className = `${prefix}offset-reset`;
+        resetBtn.innerHTML = 'Reset';
+        resetBtn.title = 'Reset Offset';
+        resetBtn.addEventListener('click', () => {
+            this.onOffsetChange(0);
+            this.setOffset(0); // Update local state and UI
+        });
 
-            controlsRow.appendChild(slider);
-            controlsRow.appendChild(valueDisplay);
-            controlsRow.appendChild(resetBtn);
-            offsetSection.appendChild(controlsRow);
+        // Value display
+        const valueDisplay = document.createElement('span');
+        valueDisplay.className = `${prefix}offset-value`;
+        valueDisplay.textContent = this.formatOffset(this.offset);
 
-            this.menu.appendChild(offsetSection);
-        }
+        // Slider
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '-5';
+        slider.max = '5';
+        slider.step = '0.1';
+        slider.value = this.offset.toString();
+        // Add player-slider class for red theme
+        slider.className = `${prefix}offset-slider ${prefix}player-slider`;
+        slider.style.flex = '1'; // Ensure it takes available space
+
+        slider.addEventListener('input', (e) => {
+            const val = parseFloat((e.target as HTMLInputElement).value);
+            this.onOffsetChange(val);
+            this.offset = val; // Update local state
+            valueDisplay.textContent = this.formatOffset(val);
+        });
+
+        sliderContainer.appendChild(resetBtn);
+        sliderContainer.appendChild(slider);
+        sliderContainer.appendChild(valueDisplay);
+
+        controlGroup.appendChild(sliderContainer);
+        panel.appendChild(controlGroup);
+        this.menu.appendChild(panel);
+    }
+
+    private getSettingsIcon(): string {
+        return `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>`;
     }
 
     private createMenuItem(label: string, isActive: boolean, onClick: () => void): HTMLButtonElement {

@@ -1,6 +1,6 @@
 {
     "name": "aspect-player-react",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "React wrapper for Aspect Video Player SDK",
     "license": "MIT",
     "author": "Mahesh Sharan",
@@ -47,10 +47,10 @@
         "clean": "rimraf dist"
     },
     "dependencies": {
-        "aspect-player-shared": "^0.1.4",
-        "aspect-player-core": "^0.1.4",
-        "aspect-player-sources": "^0.1.4",
-        "aspect-player-ui": "^0.1.4"
+        "aspect-player-shared": "^0.1.5",
+        "aspect-player-core": "^0.1.5",
+        "aspect-player-sources": "^0.1.5",
+        "aspect-player-ui": "^0.1.5"
     },
     "peerDependencies": {
         "react": "^18.0.0",
