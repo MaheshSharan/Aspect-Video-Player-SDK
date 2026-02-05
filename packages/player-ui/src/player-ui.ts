@@ -623,7 +623,21 @@ export class PlayerUI {
         }
     };
 
-    private handleClick = (): void => {
+    private handleClick = (e: MouseEvent): void => {
+        // Check if click was on a control element - if so, don't toggle play
+        const target = e.target as HTMLElement;
+        const isControlElement = target.closest('.player-controls') !== null ||
+            target.closest('.player-btn') !== null ||
+            target.closest('.player-menu') !== null ||
+            target.closest('.player-slider') !== null ||
+            target.tagName === 'BUTTON' ||
+            target.tagName === 'INPUT';
+
+        if (!isControlElement) {
+            // Click on video area - toggle play/pause
+            this.handlePlayPause();
+        }
+
         this.showControls();
     };
 

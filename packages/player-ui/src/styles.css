@@ -91,9 +91,9 @@
   transform: scale(0.95);
 }
 
+/* Remove focus outline on click - only show on keyboard navigation */
 .player-btn:focus {
-  outline: 2px solid var(--player-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .player-btn svg {
@@ -310,66 +310,314 @@
   content: '✓ ';
 }
 
-/* Subtitle Menu */
+/* Subtitle Menu - Improved */
 .player-subtitle-menu .player-menu {
-  min-width: 200px;
+  min-width: 240px;
+  max-width: 300px;
+}
+
+.player-subtitle-settings-menu {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-subtitle-menu-header {
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-subtitle-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.player-subtitle-menu-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--player-text);
+}
+
+/* Toggle Switch */
+.player-subtitle-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.player-subtitle-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.player-subtitle-toggle-slider {
+  width: 36px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  transition: background 0.2s ease;
+  position: relative;
+}
+
+.player-subtitle-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  top: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.player-subtitle-toggle-input:checked + .player-subtitle-toggle-slider {
+  background: var(--player-accent);
+}
+
+.player-subtitle-toggle-input:checked + .player-subtitle-toggle-slider::before {
+  transform: translateX(16px);
+}
+
+.player-subtitle-toggle-input:focus-visible + .player-subtitle-toggle-slider {
+  outline: 2px solid var(--player-accent);
+  outline-offset: 2px;
+}
+
+.player-subtitle-settings-row {
+  margin-top: 8px;
+}
+
+.player-subtitle-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  color: var(--player-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+  transition: color 0.2s ease;
+}
+
+.player-subtitle-settings-btn:hover {
+  color: var(--player-text);
+}
+
+.player-subtitle-settings-btn svg {
+  flex-shrink: 0;
 }
 
 .player-subtitle-track-list {
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
-.player-menu-separator {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 4px 0;
+.player-subtitle-track-list::-webkit-scrollbar {
+  width: 6px;
 }
 
-.player-subtitle-offset-section {
-  padding: 8px 16px;
+.player-subtitle-track-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.player-menu-label {
-  font-size: 12px;
+.player-subtitle-track-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.player-subtitle-track-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Radio-style indicators for subtitle selection */
+.player-subtitle-radio {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  margin-right: 10px;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease;
+}
+
+.player-menu__item--active .player-subtitle-radio {
+  border-color: var(--player-accent);
+}
+
+.player-menu__item--active .player-subtitle-radio::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: var(--player-accent);
+  border-radius: 50%;
+}
+
+.player-subtitle-empty {
+  padding: 20px 16px;
+  text-align: center;
   color: var(--player-text-muted);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 13px;
 }
 
-.player-offset-controls {
+.player-subtitle-close-btn {
+  margin: 8px 16px 12px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--player-border-radius);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--player-text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.player-subtitle-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Subtitle Settings Panel */
+.player-subtitle-settings-panel {
+  padding: 12px 16px;
+}
+
+.player-subtitle-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  color: var(--player-text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 12px;
+  transition: color 0.2s ease;
+}
+
+.player-subtitle-back-btn:hover {
+  color: var(--player-text);
+}
+
+.player-subtitle-back-btn svg {
+  flex-shrink: 0;
+}
+
+.player-offset-control-group {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--player-border-radius);
+  padding: 12px;
+}
+
+.player-offset-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--player-text);
+}
+
+.player-offset-slider-container {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.player-offset-slider {
-  flex: 1;
-  width: 100%;
-}
-
-.player-offset-value {
-  font-family: monospace;
-  font-size: 11px;
-  min-width: 40px;
-  text-align: right;
-  color: var(--player-accent);
-}
-
-.player-offset-reset {
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--player-text-muted);
-  cursor: pointer;
-  border-radius: 50%;
+.player-offset-step-btn {
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--player-text);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.player-offset-step-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.player-offset-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+}
+
+.player-offset-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--player-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.player-offset-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.player-offset-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--player-accent);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+.player-offset-value {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 12px;
+  min-width: 50px;
+  text-align: center;
+  color: var(--player-accent);
+  font-weight: 500;
+}
+
+.player-offset-reset {
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--player-border-radius);
+  background: transparent;
+  color: var(--player-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .player-offset-reset:hover {
@@ -377,16 +625,11 @@
   color: var(--player-text);
 }
 
-.check-icon {
-  display: inline-block;
-  width: 16px;
-  color: var(--player-accent);
-  font-weight: bold;
-}
-
-.check-placeholder {
-  display: inline-block;
-  width: 16px;
+.player-offset-hint {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--player-text-muted);
+  line-height: 1.4;
 }
 
 /* Loading Spinner */
@@ -489,15 +732,53 @@ input[type="range"].player-slider::-moz-range-thumb {
   position: relative;
 }
 
-/* Responsive */
+/* Click area for play/pause on video */
+.player-ui::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Responsive - Tablet */
+@media (max-width: 768px) {
+  .player-controls {
+    padding: 8px 10px;
+  }
+
+  .player-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .player-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .player-menu {
+    min-width: 180px;
+    max-height: 60vh;
+  }
+
+  /* Volume slider always visible on tablet but shorter */
+  .player-volume-group .player-slider--volume {
+    width: 60px;
+  }
+}
+
+/* Responsive - Mobile */
 @media (max-width: 480px) {
   .player-controls {
     padding: 6px 8px;
   }
   
   .player-btn {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
+    /* Larger touch targets on mobile */
+    min-width: 44px;
+    min-height: 44px;
   }
   
   .player-btn svg {
@@ -509,8 +790,84 @@ input[type="range"].player-slider::-moz-range-thumb {
     font-size: 11px;
   }
   
+  /* Hide volume slider on mobile - use volume button tap */
   .player-volume-group .player-slider--volume {
     display: none;
+  }
+
+  /* Ensure menus fit on mobile */
+  .player-menu {
+    min-width: 200px;
+    max-width: calc(100vw - 40px);
+    max-height: 50vh;
+  }
+
+  .player-subtitle-track-list {
+    max-height: 180px;
+  }
+
+  /* Larger slider touch area on mobile */
+  .player-slider {
+    height: 6px;
+  }
+
+  .player-slider__track {
+    height: 6px;
+  }
+
+  /* Larger thumb on mobile for easier touch */
+  .player-slider__thumb {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Always show volume slider on touch - no hover expand */
+  .player-volume-group .player-slider--volume {
+    opacity: 1;
+    width: 60px;
+    visibility: visible;
+  }
+
+  /* Larger touch targets */
+  .player-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Menu items need larger touch targets */
+  .player-menu__item {
+    padding: 12px 16px;
+    min-height: 44px;
+  }
+
+  /* Larger slider hit area */
+  .player-slider {
+    padding: 10px 0;
+  }
+
+  /* Offset buttons need larger targets */
+  .player-offset-step-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  /* Toggle larger on touch */
+  .player-subtitle-toggle-slider {
+    width: 44px;
+    height: 24px;
+  }
+
+  .player-subtitle-toggle-slider::before {
+    width: 20px;
+    height: 20px;
+  }
+
+  .player-subtitle-toggle-input:checked + .player-subtitle-toggle-slider::before {
+    transform: translateX(20px);
   }
 }
 
