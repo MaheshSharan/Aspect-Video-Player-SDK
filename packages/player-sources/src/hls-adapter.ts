@@ -13,7 +13,7 @@ import {
     type SubtitleTrack,
 } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
-import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback } from './types';
+import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback, LiveStreamInfo } from './types';
 
 const logger = createLogger('hls-adapter');
 
@@ -244,6 +244,60 @@ export class HLSAdapter implements SourceAdapter {
         };
     }
 
+    getLiveInfo(): LiveStreamInfo | undefined {
+        if (this.hls === null || this._video === null) return undefined;
+
+        // Get the current level details
+        const levelDetails = this.hls.levels[this.hls.currentLevel]?.details;
+        if (!levelDetails) return undefined;
+
+        // Check if live stream
+        const isLive = levelDetails.live;
+        if (!isLive) return undefined;
+
+        // Live edge is the end of the sliding window
+        const liveEdge = levelDetails.edge ?? this._video.duration;
+
+        // Current latency from live edge
+        const currentTime = this._video.currentTime;
+        const latency = Math.max(0, liveEdge - currentTime);
+
+        // DVR window - how far back we can seek from the live edge
+        const dvrWindow = levelDetails.totalduration ?? 0;
+        const hasDVR = dvrWindow > 30; // Consider DVR available if > 30s window
+
+        // Target latency for low-latency mode
+        const targetLatency = this.config.lowLatency
+            ? (levelDetails.partTarget ?? levelDetails.targetduration ?? 3)
+            : undefined;
+
+        return {
+            isLive,
+            liveEdge,
+            latency,
+            hasDVR,
+            dvrWindow,
+            targetLatency,
+        };
+    }
+
+    seekToLiveEdge(): void {
+        if (this.hls === null || this._video === null) return;
+
+        const liveInfo = this.getLiveInfo();
+        if (liveInfo?.isLive) {
+            // hls.js provides liveSyncPosition for optimal live position
+            const liveSyncPosition = this.hls.liveSyncPosition;
+            if (liveSyncPosition !== undefined && liveSyncPosition !== null) {
+                this._video.currentTime = liveSyncPosition;
+            } else {
+                // Fallback to live edge minus small buffer
+                this._video.currentTime = Math.max(0, liveInfo.liveEdge - 3);
+            }
+            logger.debug(`Seeking to live edge: ${this._video.currentTime}`);
+        }
+    }
+
     destroy(): void {
         if (this.destroyed) return;
 
@@ -424,7 +478,7 @@ export class HLSAdapter implements SourceAdapter {
         // Map hls.js tracks to our SubtitleTrack format
         // Note: hls.subtitleTracks might be undefined in some versions/contexts, so check existence
         const tracks = this.hls.subtitleTracks || [];
-        console.log('[HLSAdapter] Raw subtitle tracks from hls.js:', tracks);
+        logger.debug(`Raw subtitle tracks from hls.js: ${tracks.length} tracks`);
 
         this.subtitleTracks = tracks.map((track, index) => ({
             id: `hls-${index}`,
@@ -434,7 +488,7 @@ export class HLSAdapter implements SourceAdapter {
             url: '' // HLS tracks are internal, no direct URL usually required for the UI manager unless we extract it
         }));
 
-        console.log('[HLSAdapter] Mapped subtitle tracks:', this.subtitleTracks);
+        logger.debug(`Mapped subtitle tracks: ${this.subtitleTracks.length} tracks`);
         logger.debug(`Subtitle tracks updated: ${this.subtitleTracks.length} tracks`);
 
         for (const callback of this.subtitleCallbacks) {

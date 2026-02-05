@@ -29,6 +29,7 @@ new CorePlayerEngine(config: EngineConfig)
 | `play()` | Start playback |
 | `pause()` | Pause playback |
 | `seek(position)` | Seek to position (seconds) |
+| `seekToLiveEdge()` | Seek to live edge (live streams only) |
 | `setVolume(volume)` | Set volume (0-1) |
 | `setMuted(muted)` | Toggle mute |
 | `setQuality(index)` | Set quality level (-1 for auto) |
@@ -153,6 +154,31 @@ interface MediaSourceConfig {
   poster?: string;
   startPosition?: number;
   preferredQuality?: number;
+}
+```
+
+### PlayerSnapshot
+
+```typescript
+interface PlayerSnapshot {
+  state: PlayerState;
+  currentTime: number;
+  duration: number;
+  buffered: BufferInfo;
+  volume: number;
+  muted: boolean;
+  playbackRate: number;
+  isLive: boolean;
+  liveEdge: number | undefined;     // Live edge position (live streams only)
+  liveLatency: number | undefined;  // Seconds behind live edge
+  hasDVR: boolean | undefined;      // DVR/seekback available
+  dvrWindow: number | undefined;    // DVR window in seconds
+  qualityLevels: QualityLevel[];
+  currentQuality: QualityLevel | undefined;
+  abrEnabled: boolean;
+  error: PlayerError | undefined;
+  subtitleTracks: SubtitleTrack[];
+  currentSubtitleTrack: SubtitleTrack | null;
 }
 ```
 

@@ -9,7 +9,7 @@ export type {
 
 // Core engine
 export { CorePlayerEngine, getUserErrorMessage } from './engine';
-export type { SourceAdapter, SourceAdapterFactory } from './engine';
+export type { SourceAdapter, SourceAdapterFactory, LiveStreamInfo } from './engine';
 
 // State machine
 export { PlayerStateMachine } from './state-machine';

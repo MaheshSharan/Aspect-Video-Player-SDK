@@ -48,6 +48,8 @@ describe('CorePlayerEngine', () => {
             getSubtitleTracks: vi.fn().mockReturnValue([]),
             setSubtitleTrack: vi.fn(),
             onSubtitleTracksChanged: vi.fn().mockReturnValue(() => { }),
+            getLiveInfo: vi.fn().mockReturnValue(undefined),
+            seekToLiveEdge: vi.fn(),
             destroy: vi.fn(),
         };
 

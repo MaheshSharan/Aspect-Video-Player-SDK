@@ -140,6 +140,11 @@ export const CSS_CLASSES = {
     TIME_CURRENT: 'player-time--current',
     TIME_DURATION: 'player-time--duration',
     TIME_SEPARATOR: 'player-time--separator',
+    // Live indicator
+    LIVE_INDICATOR: 'player-live',
+    LIVE_DOT: 'player-live__dot',
+    LIVE_TEXT: 'player-live__text',
+    LIVE_BEHIND: 'player-live--behind',
     // Title
     TITLE: 'player-title',
     TITLE_EPISODE: 'player-title__episode',

@@ -1,4 +1,7 @@
 import type { PlayerUIConfig } from './types';
+import { createLogger } from 'aspect-player-shared';
+
+const logger = createLogger('thumbnail-manager');
 
 /**
  * Thumbnail cue parsed from VTT sprite sheet.
@@ -44,7 +47,7 @@ export class ThumbnailManager {
             this.cues = this.parseVTT(text);
             this.loaded = true;
         } catch (error) {
-            console.warn('Failed to load thumbnail track:', error);
+            logger.warn('Failed to load thumbnail track:', error);
             this.cues = [];
         } finally {
             this.loading = false;

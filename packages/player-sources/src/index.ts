@@ -4,6 +4,7 @@ export type {
     SourceAdapterConfig,
     SegmentLoadedCallback,
     ErrorCallback,
+    LiveStreamInfo,
 } from './types';
 
 // Adapters

@@ -96,6 +96,14 @@ export interface PlayerSnapshot {
     readonly muted: boolean;
     readonly playbackRate: number;
     readonly isLive: boolean;
+    /** Live edge position in seconds (only defined for live streams) */
+    readonly liveEdge: number | undefined;
+    /** Current latency from live edge in seconds (only defined for live streams) */
+    readonly liveLatency: number | undefined;
+    /** Whether DVR is available for this live stream */
+    readonly hasDVR: boolean | undefined;
+    /** DVR window size in seconds */
+    readonly dvrWindow: number | undefined;
     readonly qualityLevels: readonly QualityLevel[];
     readonly currentQuality: QualityLevel | undefined;
     readonly abrEnabled: boolean;
@@ -144,6 +152,12 @@ export interface PlayerEngine {
      * @param seconds - Target position in seconds
      */
     seek(seconds: number): void;
+
+    /**
+     * Seek to the live edge for live streams.
+     * No-op for non-live streams.
+     */
+    seekToLiveEdge(): void;
 
     /**
      * Destroy the player and release all resources.

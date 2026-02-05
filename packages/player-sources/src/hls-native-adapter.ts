@@ -9,7 +9,7 @@ import {
     type SubtitleTrack,
 } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
-import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback } from './types';
+import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback, LiveStreamInfo } from './types';
 
 const logger = createLogger('hls-native-adapter');
 
@@ -159,6 +159,44 @@ export class HLSNativeAdapter implements SourceAdapter {
 
     onSubtitleTracksChanged(_callback: SubtitleTracksCallback): Unsubscribe {
         return () => { };
+    }
+
+    getLiveInfo(): LiveStreamInfo | undefined {
+        if (this.video === null) return undefined;
+
+        // For native HLS, we detect live streams by checking for Infinity duration
+        const duration = this.video.duration;
+        const isLive = duration === Infinity;
+
+        if (!isLive) return undefined;
+
+        // For native HLS, we have limited access to live stream details
+        // The browser manages DVR/seekable ranges internally
+        const seekable = this.video.seekable;
+        const liveEdge = seekable.length > 0 ? seekable.end(seekable.length - 1) : 0;
+        const dvrWindow = seekable.length > 0 ? (seekable.end(0) - seekable.start(0)) : 0;
+
+        const currentTime = this.video.currentTime;
+        const latency = Math.max(0, liveEdge - currentTime);
+
+        return {
+            isLive,
+            liveEdge,
+            latency,
+            hasDVR: dvrWindow > 30,
+            dvrWindow,
+        };
+    }
+
+    seekToLiveEdge(): void {
+        if (this.video === null) return;
+
+        const liveInfo = this.getLiveInfo();
+        if (liveInfo?.isLive) {
+            // Seek to near the live edge
+            this.video.currentTime = Math.max(0, liveInfo.liveEdge - 3);
+            logger.debug(`Seeking to live edge: ${this.video.currentTime}`);
+        }
     }
 
     destroy(): void {

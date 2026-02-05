@@ -179,6 +179,79 @@
   color: var(--player-text-muted);
 }
 
+/* Live Indicator */
+.player-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--player-border-radius);
+  background: transparent;
+  color: var(--player-text);
+  font-family: var(--player-font-family);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: default;
+  transition: background var(--player-transition), color var(--player-transition);
+}
+
+.player-live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--player-accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.player-live__text {
+  color: inherit;
+}
+
+/* Live - at live edge (not clickable) */
+.player-live:disabled {
+  cursor: default;
+}
+
+.player-live:disabled .player-live__dot {
+  background: var(--player-accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Live - behind live edge (clickable) */
+.player-live--behind {
+  cursor: pointer;
+}
+
+.player-live--behind:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.player-live--behind:focus {
+  outline: 2px solid var(--player-accent);
+  outline-offset: 2px;
+}
+
+.player-live--behind .player-live__dot {
+  background: var(--player-text-muted);
+  animation: none;
+}
+
+.player-live--behind .player-live__text {
+  color: var(--player-text-muted);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Volume Group */
 .player-volume-group {
   display: flex;
@@ -441,12 +514,77 @@ input[type="range"].player-slider::-moz-range-thumb {
   }
 }
 
-/* Accessibility */
+/* Accessibility - Screen Reader Only */
+.player-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Accessibility - Focus Styles */
+.player-btn:focus-visible,
+.player-slider:focus-visible,
+.player-menu__item:focus-visible,
+input[type="range"].player-slider:focus-visible {
+  outline: 2px solid var(--player-accent);
+  outline-offset: 2px;
+}
+
+/* Remove default focus outline, we use focus-visible instead */
+.player-btn:focus:not(:focus-visible),
+.player-slider:focus:not(:focus-visible),
+.player-menu__item:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip link for keyboard users */
+.player-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--player-bg-solid);
+  color: var(--player-text);
+  padding: 8px 16px;
+  z-index: 100;
+  text-decoration: none;
+  border-radius: var(--player-border-radius);
+}
+
+.player-skip-link:focus {
+  top: 0;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  .player-btn,
+  .player-menu__item {
+    border: 1px solid currentColor;
+  }
+  
+  .player-slider__fill,
+  .player-slider__thumb {
+    background: currentColor;
+  }
+  
+  .player-menu__item--active {
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* Accessibility - Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .player-btn,
   .player-slider__thumb,
   .player-menu__item,
-  .player-volume-group .player-slider--volume {
+  .player-volume-group .player-slider--volume,
+  .player-controls {
     transition: none;
   }
   

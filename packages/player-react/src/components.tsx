@@ -184,14 +184,16 @@ export const AspectPlayer = forwardRef<HTMLDivElement, AspectPlayerProps>(
             );
 
             subs.push(
-                engine.on('subtitletracks', ({ tracks }) => {
-                    console.log('[AspectPlayer] Subtitle tracks updated:', tracks);
+                engine.on('subtitletracks', (_event) => {
+                    // Subtitle tracks updated - UI will reflect changes
+                    setSnapshot(engine.getSnapshot());
                 })
             );
 
             subs.push(
-                engine.on('subtitletrackchange', ({ trackId }) => {
-                    console.log('[AspectPlayer] Subtitle track changed:', trackId);
+                engine.on('subtitletrackchange', (_event) => {
+                    // Subtitle track changed - UI will reflect changes
+                    setSnapshot(engine.getSnapshot());
                 })
             );
 

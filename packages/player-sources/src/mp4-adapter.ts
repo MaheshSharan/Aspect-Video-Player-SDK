@@ -9,7 +9,7 @@ import {
     type SubtitleTrack,
 } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
-import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback } from './types';
+import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback, LiveStreamInfo } from './types';
 
 const logger = createLogger('mp4-adapter');
 
@@ -188,6 +188,15 @@ export class MP4Adapter implements SourceAdapter {
                 this.subtitleCallbacks.splice(idx, 1);
             }
         };
+    }
+
+    getLiveInfo(): LiveStreamInfo | undefined {
+        // Progressive MP4 does not support live streaming
+        return undefined;
+    }
+
+    seekToLiveEdge(): void {
+        // Progressive MP4 does not support live streaming - no-op
     }
 
     private updateSubtitleTracks(): void {

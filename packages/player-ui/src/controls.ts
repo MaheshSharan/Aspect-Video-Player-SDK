@@ -22,6 +22,7 @@ export class PlayButton implements UIComponent {
         this.element = document.createElement('button');
         this.element.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${CSS_CLASSES.BUTTON_PLAY}`;
         this.element.setAttribute('aria-label', 'Play');
+        this.element.setAttribute('type', 'button');
         this.element.innerHTML = this.getPlayIcon();
         this.element.addEventListener('click', this.handleClick);
         return this.element;
@@ -38,6 +39,7 @@ export class PlayButton implements UIComponent {
             this.element.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${playing ? CSS_CLASSES.BUTTON_PAUSE : CSS_CLASSES.BUTTON_PLAY}`;
             this.element.innerHTML = playing ? this.getPauseIcon() : this.getPlayIcon();
             this.element.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+            this.element.setAttribute('aria-pressed', String(playing));
         }
     }
 
@@ -94,6 +96,7 @@ export class SeekBar implements UIComponent {
         this.element.setAttribute('aria-valuemin', '0');
         this.element.setAttribute('aria-valuemax', '100');
         this.element.setAttribute('aria-valuenow', '0');
+        this.element.setAttribute('aria-valuetext', '0:00 of 0:00');
         this.element.tabIndex = 0;
 
         this.track = document.createElement('div');
@@ -161,6 +164,7 @@ export class SeekBar implements UIComponent {
         }
 
         this.element?.setAttribute('aria-valuenow', String(Math.round(progress)));
+        this.element?.setAttribute('aria-valuetext', `${this.formatTime(this.currentTime)} of ${this.formatTime(this.duration)}`);
     }
 
     destroy(): void {
@@ -318,6 +322,9 @@ export class TimeDisplay implements UIComponent {
 
         this.element = document.createElement('div');
         this.element.className = `${prefix}${CSS_CLASSES.TIME}`;
+        this.element.setAttribute('role', 'timer');
+        this.element.setAttribute('aria-live', 'off');
+        this.element.setAttribute('aria-atomic', 'true');
 
         this.currentTimeEl = document.createElement('span');
         this.currentTimeEl.className = `${prefix}${CSS_CLASSES.TIME_CURRENT}`;
@@ -345,7 +352,12 @@ export class TimeDisplay implements UIComponent {
 
         if (this.durationEl !== null) {
             if (snapshot.isLive) {
-                this.durationEl.textContent = 'LIVE';
+                // For live streams, show time behind live edge if available
+                if (snapshot.liveLatency !== undefined && snapshot.liveLatency > 5) {
+                    this.durationEl.textContent = `-${formatTime(snapshot.liveLatency)}`;
+                } else {
+                    this.durationEl.textContent = 'LIVE';
+                }
             } else if (!Number.isFinite(snapshot.duration) || snapshot.duration === 0) {
                 // Duration not loaded yet
                 this.durationEl.textContent = '--:--';
@@ -356,6 +368,85 @@ export class TimeDisplay implements UIComponent {
     }
 
     destroy(): void {
+        this.element = null;
+    }
+}
+
+/**
+ * Live indicator component.
+ * Shows a red "LIVE" badge that can be clicked to seek to live edge.
+ */
+export class LiveIndicator implements UIComponent {
+    readonly name = 'live-indicator';
+
+    private element: HTMLButtonElement | null = null;
+    private isLive = false;
+    private isAtLiveEdge = true;
+    private readonly onSeekToLive: () => void;
+
+    constructor(private readonly config: PlayerUIConfig, onSeekToLive: () => void) {
+        this.onSeekToLive = onSeekToLive;
+    }
+
+    render(): HTMLElement {
+        const prefix = this.config.classPrefix ?? '';
+        this.element = document.createElement('button');
+        this.element.className = `${prefix}${CSS_CLASSES.LIVE_INDICATOR}`;
+        this.element.setAttribute('aria-label', 'Go to live');
+        this.element.setAttribute('type', 'button');
+        this.element.style.display = 'none'; // Hidden by default
+
+        const dot = document.createElement('span');
+        dot.className = `${prefix}${CSS_CLASSES.LIVE_DOT}`;
+
+        const text = document.createElement('span');
+        text.className = `${prefix}${CSS_CLASSES.LIVE_TEXT}`;
+        text.textContent = 'LIVE';
+
+        this.element.appendChild(dot);
+        this.element.appendChild(text);
+        this.element.addEventListener('click', this.handleClick);
+
+        return this.element;
+    }
+
+    update(snapshot: PlayerSnapshot): void {
+        if (this.element === null) return;
+
+        const prefix = this.config.classPrefix ?? '';
+        const wasLive = this.isLive;
+        this.isLive = snapshot.isLive;
+
+        // Show/hide based on live state
+        this.element.style.display = this.isLive ? 'flex' : 'none';
+
+        if (!this.isLive) return;
+
+        // Determine if we're at live edge (within 10 seconds)
+        const latency = snapshot.liveLatency ?? 0;
+        const atLiveEdge = latency < 10;
+
+        if (atLiveEdge !== this.isAtLiveEdge || wasLive !== this.isLive) {
+            this.isAtLiveEdge = atLiveEdge;
+
+            // Update visual state
+            this.element.classList.toggle(`${prefix}${CSS_CLASSES.LIVE_BEHIND}`, !atLiveEdge);
+            this.element.setAttribute('aria-label', atLiveEdge ? 'Watching live' : 'Go to live');
+            this.element.setAttribute('aria-pressed', String(atLiveEdge));
+
+            // Disable button if already at live edge
+            this.element.disabled = atLiveEdge;
+        }
+    }
+
+    private handleClick = (): void => {
+        if (!this.isAtLiveEdge) {
+            this.onSeekToLive();
+        }
+    };
+
+    destroy(): void {
+        this.element?.removeEventListener('click', this.handleClick);
         this.element = null;
     }
 }
@@ -393,6 +484,7 @@ export class VolumeControl implements UIComponent {
         this.muteButton = document.createElement('button');
         this.muteButton.className = `${prefix}${CSS_CLASSES.BUTTON}`;
         this.muteButton.setAttribute('aria-label', 'Mute');
+        this.muteButton.setAttribute('type', 'button');
         this.muteButton.innerHTML = this.getVolumeIcon(1);
         this.muteButton.addEventListener('click', this.handleMuteClick);
 
@@ -404,6 +496,7 @@ export class VolumeControl implements UIComponent {
         this.slider.value = '1';
         this.slider.className = `${prefix}${CSS_CLASSES.SLIDER} ${prefix}${CSS_CLASSES.SLIDER_VOLUME}`;
         this.slider.setAttribute('aria-label', 'Volume');
+        this.slider.setAttribute('aria-valuetext', '100%');
         this.slider.addEventListener('input', this.handleSliderInput);
 
         this.element.appendChild(this.muteButton);
@@ -418,11 +511,13 @@ export class VolumeControl implements UIComponent {
 
         if (this.slider !== null) {
             this.slider.value = String(this.volume);
+            this.slider.setAttribute('aria-valuetext', `${Math.round(this.volume * 100)}%`);
         }
 
         if (this.muteButton !== null) {
             this.muteButton.innerHTML = this.getVolumeIcon(this.isMuted ? 0 : this.volume);
             this.muteButton.setAttribute('aria-label', this.isMuted ? 'Unmute' : 'Mute');
+            this.muteButton.setAttribute('aria-pressed', String(this.isMuted));
         }
     }
 
@@ -473,6 +568,7 @@ export class FullscreenButton implements UIComponent {
         this.element = document.createElement('button');
         this.element.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${CSS_CLASSES.BUTTON_FULLSCREEN}`;
         this.element.setAttribute('aria-label', 'Fullscreen');
+        this.element.setAttribute('type', 'button');
         this.element.innerHTML = this.getEnterIcon();
         this.element.addEventListener('click', this.handleClick);
 
@@ -487,6 +583,7 @@ export class FullscreenButton implements UIComponent {
             if (this.element !== null) {
                 this.element.innerHTML = isFullscreen ? this.getExitIcon() : this.getEnterIcon();
                 this.element.setAttribute('aria-label', isFullscreen ? 'Exit fullscreen' : 'Fullscreen');
+                this.element.setAttribute('aria-pressed', String(isFullscreen));
             }
         }
     }
@@ -529,6 +626,7 @@ export class PiPButton implements UIComponent {
         this.element = document.createElement('button');
         this.element.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${CSS_CLASSES.BUTTON_PIP}`;
         this.element.setAttribute('aria-label', 'Picture in Picture');
+        this.element.setAttribute('type', 'button');
         this.element.innerHTML = this.getIcon();
         this.element.addEventListener('click', this.handleClick);
 
@@ -542,6 +640,7 @@ export class PiPButton implements UIComponent {
             this.isActive = isActive;
             if (this.element !== null) {
                 this.element.setAttribute('aria-label', isActive ? 'Exit Picture in Picture' : 'Picture in Picture');
+                this.element.setAttribute('aria-pressed', String(isActive));
             }
         }
     }
@@ -585,6 +684,7 @@ export class SkipBackButton implements UIComponent {
         this.element = document.createElement('button');
         this.element.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${CSS_CLASSES.BUTTON_SKIP_BACK}`;
         this.element.setAttribute('aria-label', `Skip back ${this.skipSeconds} seconds`);
+        this.element.setAttribute('type', 'button');
         this.element.innerHTML = this.getIcon();
         this.element.addEventListener('click', this.handleClick);
 
@@ -637,6 +737,7 @@ export class SkipForwardButton implements UIComponent {
         this.element = document.createElement('button');
         this.element.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${CSS_CLASSES.BUTTON_SKIP_FORWARD}`;
         this.element.setAttribute('aria-label', `Skip forward ${this.skipSeconds} seconds`);
+        this.element.setAttribute('type', 'button');
         this.element.innerHTML = this.getIcon();
         this.element.addEventListener('click', this.handleClick);
 

@@ -34,12 +34,17 @@ export class QualitySelector implements UIComponent {
 
         this.button = document.createElement('button');
         this.button.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${CSS_CLASSES.BUTTON_SETTINGS}`;
-        this.button.setAttribute('aria-label', 'Quality');
+        this.button.setAttribute('aria-label', 'Quality settings');
+        this.button.setAttribute('aria-haspopup', 'menu');
+        this.button.setAttribute('aria-expanded', 'false');
+        this.button.setAttribute('type', 'button');
         this.button.innerHTML = this.getIcon();
         this.button.addEventListener('click', this.handleButtonClick);
 
         this.menu = document.createElement('div');
         this.menu.className = `${prefix}${CSS_CLASSES.MENU}`;
+        this.menu.setAttribute('role', 'menu');
+        this.menu.setAttribute('aria-label', 'Quality levels');
         this.menu.style.display = 'none';
 
         this.element.appendChild(this.button);
@@ -73,6 +78,8 @@ export class QualitySelector implements UIComponent {
         // Auto option
         const autoItem = document.createElement('button');
         autoItem.className = `${prefix}${CSS_CLASSES.MENU_ITEM}${this.autoEnabled ? ` ${prefix}${CSS_CLASSES.MENU_ITEM_ACTIVE}` : ''}`;
+        autoItem.setAttribute('role', 'menuitem');
+        autoItem.setAttribute('aria-checked', String(this.autoEnabled));
         autoItem.textContent = 'Auto';
         autoItem.addEventListener('click', () => {
             this.onSelect(-1);
@@ -87,6 +94,8 @@ export class QualitySelector implements UIComponent {
             const isActive = !this.autoEnabled && level.index === this.currentIndex;
             const item = document.createElement('button');
             item.className = `${prefix}${CSS_CLASSES.MENU_ITEM}${isActive ? ` ${prefix}${CSS_CLASSES.MENU_ITEM_ACTIVE}` : ''}`;
+            item.setAttribute('role', 'menuitem');
+            item.setAttribute('aria-checked', String(isActive));
             item.textContent = level.label;
             item.addEventListener('click', () => {
                 this.onSelect(level.index);
@@ -111,6 +120,7 @@ export class QualitySelector implements UIComponent {
         if (this.menu !== null) {
             this.menu.style.display = 'block';
             this.isOpen = true;
+            this.button?.setAttribute('aria-expanded', 'true');
         }
     }
 
@@ -118,6 +128,7 @@ export class QualitySelector implements UIComponent {
         if (this.menu !== null) {
             this.menu.style.display = 'none';
             this.isOpen = false;
+            this.button?.setAttribute('aria-expanded', 'false');
         }
     }
 
@@ -155,11 +166,16 @@ export class SpeedSelector implements UIComponent {
         this.button = document.createElement('button');
         this.button.className = `${prefix}${CSS_CLASSES.BUTTON}`;
         this.button.setAttribute('aria-label', 'Playback speed');
+        this.button.setAttribute('aria-haspopup', 'menu');
+        this.button.setAttribute('aria-expanded', 'false');
+        this.button.setAttribute('type', 'button');
         this.button.textContent = '1x';
         this.button.addEventListener('click', this.handleButtonClick);
 
         this.menu = document.createElement('div');
         this.menu.className = `${prefix}${CSS_CLASSES.MENU}`;
+        this.menu.setAttribute('role', 'menu');
+        this.menu.setAttribute('aria-label', 'Playback speeds');
         this.menu.style.display = 'none';
 
         this.element.appendChild(this.button);
@@ -198,6 +214,8 @@ export class SpeedSelector implements UIComponent {
             const isActive = Math.abs(speed - this.currentRate) < 0.01;
             const item = document.createElement('button');
             item.className = `${prefix}${CSS_CLASSES.MENU_ITEM}${isActive ? ` ${prefix}${CSS_CLASSES.MENU_ITEM_ACTIVE}` : ''}`;
+            item.setAttribute('role', 'menuitem');
+            item.setAttribute('aria-checked', String(isActive));
             item.textContent = speed === 1 ? 'Normal' : `${speed}x`;
             item.addEventListener('click', () => {
                 this.onSelect(speed);
@@ -222,6 +240,7 @@ export class SpeedSelector implements UIComponent {
         if (this.menu !== null) {
             this.menu.style.display = 'block';
             this.isOpen = true;
+            this.button?.setAttribute('aria-expanded', 'true');
         }
     }
 
@@ -229,6 +248,7 @@ export class SpeedSelector implements UIComponent {
         if (this.menu !== null) {
             this.menu.style.display = 'none';
             this.isOpen = false;
+            this.button?.setAttribute('aria-expanded', 'false');
         }
     }
 }
@@ -248,7 +268,9 @@ export class LoadingSpinner implements UIComponent {
 
         this.element = document.createElement('div');
         this.element.className = `${prefix}${CSS_CLASSES.SPINNER}`;
-        this.element.innerHTML = `<svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><animate attributeName="stroke-dasharray" dur="1.5s" repeatCount="indefinite" values="1,150;90,150;90,150"/><animate attributeName="stroke-dashoffset" dur="1.5s" repeatCount="indefinite" values="0;-35;-124"/></circle></svg>`;
+        this.element.setAttribute('role', 'status');
+        this.element.setAttribute('aria-label', 'Loading');
+        this.element.innerHTML = `<svg viewBox="0 0 50 50" aria-hidden="true"><circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><animate attributeName="stroke-dasharray" dur="1.5s" repeatCount="indefinite" values="1,150;90,150;90,150"/><animate attributeName="stroke-dashoffset" dur="1.5s" repeatCount="indefinite" values="0;-35;-124"/></circle></svg>`;
 
         // Hidden by default
         this.element.style.display = 'none';
@@ -289,6 +311,8 @@ export class ErrorOverlay implements UIComponent {
 
         this.element = document.createElement('div');
         this.element.className = `${prefix}${CSS_CLASSES.ERROR}`;
+        this.element.setAttribute('role', 'alert');
+        this.element.setAttribute('aria-live', 'assertive');
         this.element.style.display = 'none';
 
         this.messageEl = document.createElement('p');
@@ -296,6 +320,7 @@ export class ErrorOverlay implements UIComponent {
 
         this.retryButton = document.createElement('button');
         this.retryButton.className = `${prefix}${CSS_CLASSES.BUTTON}`;
+        this.retryButton.setAttribute('type', 'button');
         this.retryButton.textContent = 'Retry';
         this.retryButton.addEventListener('click', this.handleRetry);
 
@@ -362,11 +387,16 @@ export class SubtitleMenu implements UIComponent {
         this.button = document.createElement('button');
         this.button.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${CSS_CLASSES.BUTTON_SETTINGS}`;
         this.button.setAttribute('aria-label', 'Subtitles');
+        this.button.setAttribute('aria-haspopup', 'menu');
+        this.button.setAttribute('aria-expanded', 'false');
+        this.button.setAttribute('type', 'button');
         this.button.innerHTML = this.getIcon();
         this.button.addEventListener('click', this.handleButtonClick);
 
         this.menu = document.createElement('div');
         this.menu.className = `${prefix}${CSS_CLASSES.MENU} ${prefix}subtitle-settings-menu`;
+        this.menu.setAttribute('role', 'menu');
+        this.menu.setAttribute('aria-label', 'Subtitle options');
         this.menu.style.display = 'none';
 
         this.element.appendChild(this.button);
@@ -550,9 +580,11 @@ export class SubtitleMenu implements UIComponent {
         const prefix = this.config.classPrefix ?? '';
         const item = document.createElement('button');
         item.className = `${prefix}${CSS_CLASSES.MENU_ITEM}${isActive ? ` ${prefix}${CSS_CLASSES.MENU_ITEM_ACTIVE}` : ''}`;
+        item.setAttribute('role', 'menuitem');
+        item.setAttribute('aria-checked', String(isActive));
 
         // Checkmark icon for active state
-        const checkIcon = isActive ? '<span class="check-icon">✓</span> ' : '<span class="check-placeholder"></span> ';
+        const checkIcon = isActive ? '<span class="check-icon" aria-hidden="true">✓</span> ' : '<span class="check-placeholder" aria-hidden="true"></span> ';
         item.innerHTML = `${checkIcon}${label}`;
 
         item.addEventListener('click', onClick);
@@ -592,6 +624,7 @@ export class SubtitleMenu implements UIComponent {
             this.updateMenu();
             this.menu.style.display = 'block';
             this.isOpen = true;
+            this.button?.setAttribute('aria-expanded', 'true');
         }
     }
 
@@ -599,6 +632,7 @@ export class SubtitleMenu implements UIComponent {
         if (this.menu !== null) {
             this.menu.style.display = 'none';
             this.isOpen = false;
+            this.button?.setAttribute('aria-expanded', 'false');
         }
     }
 

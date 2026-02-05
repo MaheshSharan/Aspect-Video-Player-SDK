@@ -11,7 +11,7 @@ import {
     type SubtitleTrack,
 } from 'aspect-player-shared';
 import type { SegmentTiming } from 'aspect-player-core';
-import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback } from './types';
+import type { SourceAdapter, SourceAdapterConfig, SegmentLoadedCallback, ErrorCallback, SubtitleTracksCallback, LiveStreamInfo } from './types';
 
 // dashjs type imports
 import type {
@@ -239,6 +239,57 @@ export class DASHAdapter implements SourceAdapter {
                 this.subtitleCallbacks.splice(idx, 1);
             }
         };
+    }
+
+    getLiveInfo(): LiveStreamInfo | undefined {
+        if (this.dashPlayer === null || this._video === null) return undefined;
+
+        // Check if the stream is live
+        const isLive = this.dashPlayer.isDynamic();
+        if (!isLive) return undefined;
+
+        const duration = this.dashPlayer.duration();
+
+        // Live edge position
+        const liveEdge = duration;
+
+        // Current latency from live edge
+        const currentTime = this._video.currentTime;
+        const latency = Math.max(0, liveEdge - currentTime);
+
+        // DVR window - use seekable range
+        const seekable = this._video.seekable;
+        const dvrWindow = seekable.length > 0 
+            ? (seekable.end(seekable.length - 1) - seekable.start(0)) 
+            : 0;
+        const hasDVR = dvrWindow > 30; // Consider DVR available if > 30s window
+
+        // Target latency for low-latency mode
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const player = this.dashPlayer as any;
+        const targetLatency = this.config.lowLatency
+            ? (typeof player.getTargetLiveDelay === 'function' ? player.getTargetLiveDelay() : 3)
+            : undefined;
+
+        return {
+            isLive,
+            liveEdge,
+            latency,
+            hasDVR,
+            dvrWindow,
+            targetLatency,
+        };
+    }
+
+    seekToLiveEdge(): void {
+        if (this.dashPlayer === null || this._video === null) return;
+
+        const liveInfo = this.getLiveInfo();
+        if (liveInfo?.isLive) {
+            // dash.js seekToLive method for optimal live position
+            this.dashPlayer.seek(this.dashPlayer.duration() - 3);
+            logger.debug(`Seeking to live edge: ${this._video.currentTime}`);
+        }
     }
 
     private updateSubtitleTracks(): void {

@@ -1,5 +1,8 @@
 import type { PlayerUIConfig } from './types';
 import type { PlayerSnapshot } from 'aspect-player-core';
+import { createLogger } from 'aspect-player-shared';
+
+const logger = createLogger('subtitle-manager');
 
 /**
  * Subtitle cue interface.
@@ -107,13 +110,13 @@ export class SubtitleManager {
     async loadTrack(trackId: string): Promise<void> {
         const track = this.tracks.find(t => t.id === trackId);
         if (track === undefined) {
-            console.warn(`Subtitle track not found: ${trackId}`);
+            logger.warn(`Subtitle track not found: ${trackId}`);
             return;
         }
 
         // If no URL (e.g. HLS embedded), assume adapter handles native rendering or cue injection
         if (!track.url) {
-            console.log(`[SubtitleManager] Track ${trackId} has no URL. Assuming native/adapter rendering.`);
+            logger.debug(`Track ${trackId} has no URL - using native/adapter rendering`);
             this.activeTrackId = trackId;
             this.enabled = true;
             this.cues = []; // Clear custom cues 
@@ -132,7 +135,7 @@ export class SubtitleManager {
             this.activeTrackId = trackId;
             this.enabled = true;
         } catch (error) {
-            console.warn('Failed to load subtitle track:', error);
+            logger.warn('Failed to load subtitle track:', error);
             this.cues = [];
         }
     }

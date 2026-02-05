@@ -1,6 +1,8 @@
 import type { PlayerEngine, PlayerSnapshot } from 'aspect-player-core';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Unsubscribe } from 'aspect-player-shared';
+import { createLogger, type Unsubscribe } from 'aspect-player-shared';
+
+const logger = createLogger('player-ui');
 import type { UIComponent, PlayerUIConfig } from './types';
 import { CSS_CLASSES } from './types';
 import { injectStyles } from './inject-styles';
@@ -8,6 +10,7 @@ import {
     PlayButton,
     SeekBar,
     TimeDisplay,
+    LiveIndicator,
     VolumeControl,
     FullscreenButton,
     PiPButton,
@@ -30,6 +33,7 @@ export class PlayerUI {
 
     private container: HTMLDivElement | null = null;
     private controlsBar: HTMLDivElement | null = null;
+    private srAnnouncer: HTMLDivElement | null = null;
     private titleDisplay: TitleDisplay | null = null;
     private subtitleManager: SubtitleManager | null = null;
     private thumbnailManager: ThumbnailManager | null = null;
@@ -93,6 +97,21 @@ export class PlayerUI {
     }
 
     /**
+     * Announce a message to screen readers.
+     */
+    announce(message: string): void {
+        if (this.srAnnouncer !== null) {
+            this.srAnnouncer.textContent = message;
+            // Clear after a delay to allow re-announcement of same message
+            setTimeout(() => {
+                if (this.srAnnouncer !== null) {
+                    this.srAnnouncer.textContent = '';
+                }
+            }, 1000);
+        }
+    }
+
+    /**
      * Destroy the UI and cleanup resources.
      */
     destroy(): void {
@@ -126,6 +145,7 @@ export class PlayerUI {
         this.container?.remove();
         this.container = null;
         this.controlsBar = null;
+        this.srAnnouncer = null;
     }
 
     private build(): void {
@@ -134,6 +154,16 @@ export class PlayerUI {
         // Create main container
         this.container = document.createElement('div');
         this.container.className = `${prefix}${CSS_CLASSES.CONTAINER}`;
+        this.container.setAttribute('role', 'region');
+        this.container.setAttribute('aria-label', 'Video Player');
+
+        // Create screen reader announcer (visually hidden)
+        this.srAnnouncer = document.createElement('div');
+        this.srAnnouncer.setAttribute('role', 'status');
+        this.srAnnouncer.setAttribute('aria-live', 'polite');
+        this.srAnnouncer.setAttribute('aria-atomic', 'true');
+        this.srAnnouncer.className = `${prefix}player-sr-only`;
+        this.container.appendChild(this.srAnnouncer);
 
         // Create overlays
         const spinner = new LoadingSpinner(this.config);
@@ -147,6 +177,8 @@ export class PlayerUI {
         // Create controls bar
         this.controlsBar = document.createElement('div');
         this.controlsBar.className = `${prefix}${CSS_CLASSES.CONTROLS}`;
+        this.controlsBar.setAttribute('role', 'toolbar');
+        this.controlsBar.setAttribute('aria-label', 'Video controls');
 
         // ==================================================
         // Top row: Seek bar + Time display
@@ -161,6 +193,11 @@ export class PlayerUI {
         const timeDisplay = new TimeDisplay(this.config);
         this.components.push(timeDisplay);
         topRow.appendChild(timeDisplay.render());
+
+        // Live indicator (for live streams)
+        const liveIndicator = new LiveIndicator(this.config, () => this.engine.seekToLiveEdge());
+        this.components.push(liveIndicator);
+        topRow.appendChild(liveIndicator.render());
 
         // ==================================================
         // Bottom row: Netflix-style control bar
@@ -402,6 +439,7 @@ export class PlayerUI {
                 // Space or K: Play/Pause
                 e.preventDefault();
                 this.handlePlayPause();
+                this.announce(snapshot.state === 'playing' ? 'Paused' : 'Playing');
                 this.showControls();
                 break;
 
@@ -410,6 +448,7 @@ export class PlayerUI {
                 // M: Toggle mute
                 e.preventDefault();
                 this.engine.setMuted(!snapshot.muted);
+                this.announce(snapshot.muted ? 'Unmuted' : 'Muted');
                 this.showControls();
                 break;
 
@@ -417,6 +456,7 @@ export class PlayerUI {
                 // Left arrow: Seek back 10s
                 e.preventDefault();
                 this.handleSkipBack();
+                this.announce('Skipped back 10 seconds');
                 this.showControls();
                 break;
 
@@ -424,6 +464,7 @@ export class PlayerUI {
                 // Right arrow: Seek forward 10s
                 e.preventDefault();
                 this.handleSkipForward();
+                this.announce('Skipped forward 10 seconds');
                 this.showControls();
                 break;
 
@@ -431,6 +472,7 @@ export class PlayerUI {
                 // Up arrow: Volume up 10%
                 e.preventDefault();
                 this.engine.setVolume(Math.min(1, snapshot.volume + 0.1));
+                this.announce(`Volume ${Math.round(Math.min(1, snapshot.volume + 0.1) * 100)}%`);
                 this.showControls();
                 break;
 
@@ -438,6 +480,7 @@ export class PlayerUI {
                 // Down arrow: Volume down 10%
                 e.preventDefault();
                 this.engine.setVolume(Math.max(0, snapshot.volume - 0.1));
+                this.announce(`Volume ${Math.round(Math.max(0, snapshot.volume - 0.1) * 100)}%`);
                 this.showControls();
                 break;
 
@@ -454,6 +497,7 @@ export class PlayerUI {
                 // J: Seek back 10s (YouTube style)
                 e.preventDefault();
                 this.handleSkipBack();
+                this.announce('Skipped back 10 seconds');
                 this.showControls();
                 break;
 
@@ -462,6 +506,7 @@ export class PlayerUI {
                 // L: Seek forward 10s (YouTube style)
                 e.preventDefault();
                 this.handleSkipForward();
+                this.announce('Skipped forward 10 seconds');
                 this.showControls();
                 break;
         }
@@ -596,7 +641,7 @@ export class PlayerUI {
         if (!this.subtitleManager) return;
 
         const allTracks = [...this.staticTracks, ...this.dynamicTracks];
-        console.log('[PlayerUI] updateSubtitleTracks called. Static:', this.staticTracks.length, 'Dynamic:', this.dynamicTracks.length, 'Total:', allTracks.length);
+        logger.debug(`Updating subtitle tracks - Static: ${this.staticTracks.length}, Dynamic: ${this.dynamicTracks.length}, Total: ${allTracks.length}`);
 
         // If we have tracks but manager has none, or they changed
         this.subtitleManager.setTracks(allTracks, this.subtitleManager.getActiveTrackId());
@@ -604,7 +649,7 @@ export class PlayerUI {
         // Update menu if exists
         const subtitleMenu = this.components.find(c => c.name === 'subtitle-menu') as SubtitleMenu | undefined;
         if (subtitleMenu) {
-            console.log('[PlayerUI] Updating subtitle menu with tracks:', allTracks);
+            logger.debug(`Updating subtitle menu with ${allTracks.length} tracks`);
             subtitleMenu.setTracks(allTracks, this.subtitleManager.getActiveTrackId());
         }
     }

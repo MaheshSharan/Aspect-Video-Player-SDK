@@ -16,6 +16,7 @@ export {
     PlayButton,
     SeekBar,
     TimeDisplay,
+    LiveIndicator,
     VolumeControl,
     FullscreenButton,
     PiPButton,

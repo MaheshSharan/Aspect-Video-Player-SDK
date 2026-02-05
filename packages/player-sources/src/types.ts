@@ -70,9 +70,39 @@ export interface SourceAdapter {
     onSubtitleTracksChanged(callback: (tracks: SubtitleTrack[]) => void): Unsubscribe;
 
     /**
+     * Get live stream information.
+     * Returns undefined for non-live streams.
+     */
+    getLiveInfo(): LiveStreamInfo | undefined;
+
+    /**
+     * Seek to the live edge.
+     * Only applicable for live streams with DVR.
+     */
+    seekToLiveEdge(): void;
+
+    /**
      * Destroy the adapter and release resources.
      */
     destroy(): void;
+}
+
+/**
+ * Live stream information from the adapter.
+ */
+export interface LiveStreamInfo {
+    /** Whether this is a live stream */
+    readonly isLive: boolean;
+    /** Live edge position in seconds (current live point) */
+    readonly liveEdge: number;
+    /** Current latency from live edge in seconds */
+    readonly latency: number;
+    /** Whether DVR (seekback) is available */
+    readonly hasDVR: boolean;
+    /** DVR window size in seconds (how far back you can seek) */
+    readonly dvrWindow: number;
+    /** Target latency in seconds (for low-latency modes) */
+    readonly targetLatency?: number;
 }
 
 /**

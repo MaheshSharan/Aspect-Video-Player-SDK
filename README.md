@@ -115,6 +115,7 @@ The default UI includes:
 - Volume slider with mute toggle
 - Seek bar with buffer visualization and preview tooltip
 - Time display
+- Live indicator (for live streams) with "Go Live" button
 - Title display (center)
 - Quality selector
 - Playback speed selector
@@ -122,6 +123,32 @@ The default UI includes:
 - Fullscreen toggle
 - Subtitle button (when tracks provided)
 - Subtitle overlay
+
+## Live Stream Support
+
+The player automatically detects live streams (HLS and DASH) and provides:
+
+- **Live Indicator**: Red pulsing "LIVE" badge when watching at the live edge
+- **Go Live Button**: Click the live badge when behind to jump back to the live edge
+- **DVR Support**: Seek within the DVR window for live streams that support it
+- **Latency Display**: Shows time behind live edge when not at live position
+
+```tsx
+// Live stream with DVR
+<AspectPlayer
+  source={{ url: 'https://example.com/live-stream.m3u8' }}
+  title="Live Event"
+  controls
+/>
+
+// Access live info programmatically
+const snapshot = player.getSnapshot();
+if (snapshot.isLive) {
+  console.log('Live latency:', snapshot.liveLatency);
+  console.log('DVR window:', snapshot.dvrWindow);
+  player.seekToLiveEdge();
+}
+```
 
 ## Keyboard Shortcuts
 

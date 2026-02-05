@@ -69,8 +69,32 @@ export interface SourceAdapter {
     /** Register subtitle tracks changed callback */
     onSubtitleTracksChanged(callback: (tracks: SubtitleTrack[]) => void): Unsubscribe;
 
+    /** Get live stream information */
+    getLiveInfo(): LiveStreamInfo | undefined;
+
+    /** Seek to live edge for live streams */
+    seekToLiveEdge(): void;
+
     /** Destroy the adapter */
     destroy(): void;
+}
+
+/**
+ * Live stream information from the adapter.
+ */
+export interface LiveStreamInfo {
+    /** Whether this is a live stream */
+    readonly isLive: boolean;
+    /** Live edge position in seconds */
+    readonly liveEdge: number;
+    /** Current latency from live edge in seconds */
+    readonly latency: number;
+    /** Whether DVR (seekback) is available */
+    readonly hasDVR: boolean;
+    /** DVR window size in seconds */
+    readonly dvrWindow: number;
+    /** Target latency in seconds (for low-latency modes) */
+    readonly targetLatency?: number;
 }
 
 /**
@@ -194,7 +218,7 @@ export class CorePlayerEngine implements PlayerEngine {
                 // Setup subtitle handler
                 this.subscriptions.push(
                     adapter.onSubtitleTracksChanged((tracks) => {
-                        console.log('[CorePlayerEngine] Received subtitle tracks from adapter:', tracks);
+                        logger.debug(`Received ${tracks.length} subtitle tracks from adapter`);
                         this.subtitleTracks = tracks;
                         this.events.emit('subtitletracks', { tracks });
                     })
@@ -203,7 +227,7 @@ export class CorePlayerEngine implements PlayerEngine {
                 // Initial subtitle tracks (if any already loaded or synchronous)
                 this.subtitleTracks = adapter.getSubtitleTracks();
                 if (this.subtitleTracks.length > 0) {
-                    console.log('[CorePlayerEngine] Initial subtitle tracks found:', this.subtitleTracks);
+                    logger.debug(`Initial subtitle tracks found: ${this.subtitleTracks.length} tracks`);
                     this.events.emit('subtitletracks', { tracks: this.subtitleTracks });
                 }
 
@@ -291,6 +315,24 @@ export class CorePlayerEngine implements PlayerEngine {
         this.videoController.setCurrentTime(clampedTime);
     }
 
+    seekToLiveEdge(): void {
+        this.assertNotDestroyed();
+
+        if (this.sourceAdapter === null) {
+            logger.warn('seekToLiveEdge called with no source loaded');
+            return;
+        }
+
+        const liveInfo = this.sourceAdapter.getLiveInfo();
+        if (liveInfo?.isLive) {
+            logger.debug('Seeking to live edge');
+            this.sourceAdapter.seekToLiveEdge();
+            this.events.emit('seeking', { target: liveInfo.liveEdge });
+        } else {
+            logger.debug('seekToLiveEdge called on non-live stream - no-op');
+        }
+    }
+
     destroy(): void {
         if (this.destroyed) {
             return;
@@ -319,6 +361,8 @@ export class CorePlayerEngine implements PlayerEngine {
     }
 
     getSnapshot(): PlayerSnapshot {
+        const liveInfo = this.sourceAdapter?.getLiveInfo();
+
         return {
             state: this.stateMachine.getState(),
             currentTime: this.videoController.currentTime,
@@ -327,7 +371,11 @@ export class CorePlayerEngine implements PlayerEngine {
             volume: this.videoController.volume,
             muted: this.videoController.muted,
             playbackRate: this.videoController.playbackRate,
-            isLive: this.isLiveStream(),
+            isLive: liveInfo?.isLive ?? this.isLiveStream(),
+            liveEdge: liveInfo?.liveEdge,
+            liveLatency: liveInfo?.latency,
+            hasDVR: liveInfo?.hasDVR,
+            dvrWindow: liveInfo?.dvrWindow,
             qualityLevels: this.abrController.getState().levels,
             currentQuality: this.abrController.getState().currentLevel,
             abrEnabled: this.abrController.getState().mode === 'auto',
@@ -505,12 +553,14 @@ export class CorePlayerEngine implements PlayerEngine {
                 this.bufferManager.updateBuffer(currentTime, this.video.buffered);
                 this.abrController.updateBufferState(this.bufferManager.getBufferInfo().forwardBuffer);
 
+                const liveInfo = this.sourceAdapter?.getLiveInfo();
+
                 this.events.emit('timeupdate', {
                     currentTime,
                     duration,
-                    isLive: this.isLiveStream(),
-                    liveEdge: undefined,
-                    liveLatency: undefined,
+                    isLive: liveInfo?.isLive ?? this.isLiveStream(),
+                    liveEdge: liveInfo?.liveEdge,
+                    liveLatency: liveInfo?.latency,
                 });
             })
         );
