@@ -815,31 +815,6 @@
 /* ═══════════════════════════════════════════
    Subtitle Overlay (on video)
    ═══════════════════════════════════════════ */
-.player-player-subtitles {
-  position: absolute;
-  bottom: 8%;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 80%;
-  text-align: center;
-  pointer-events: none;
-  z-index: 8;
-  display: none;
-  /* Default base font-size; overridden by appearance.fontSize as a percentage */
-  font-size: 100%;
-  line-height: 1.4;
-  color: #fff;
-  font-weight: 400;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 0, 0, 0.6);
-  /* Inner spans get this background via CSS variable */
-  --sub-bg-opacity: 0.5;
-  background: rgba(0, 0, 0, var(--sub-bg-opacity));
-  padding: 4px 12px;
-  border-radius: var(--player-border-radius);
-  transition: bottom 0.3s ease, font-size 0.2s ease;
-}
-
-/* Also support un-prefixed for when classPrefix is '' */
 .player-subtitles {
   position: absolute;
   bottom: 8%;
@@ -853,6 +828,7 @@
   font-size: 100%;
   line-height: 1.4;
   color: #fff;
+  font-weight: 400;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 0, 0, 0.6);
   --sub-bg-opacity: 0.5;
   background: rgba(0, 0, 0, var(--sub-bg-opacity));

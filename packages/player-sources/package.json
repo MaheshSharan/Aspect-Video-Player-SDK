@@ -1,6 +1,6 @@
 {
     "name": "aspect-player-sources",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "description": "HLS, DASH, and MP4 source adapters for Aspect Video Player",
     "license": "MIT",
     "author": "Mahesh Sharan",

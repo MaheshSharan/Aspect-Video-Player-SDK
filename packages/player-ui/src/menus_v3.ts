@@ -466,9 +466,9 @@ export class SubtitleMenu implements UIComponent {
         this.offset = offset;
         // Live-update offset display without full re-render
         const prefix = this.config.classPrefix ?? '';
-        const display = this.panel?.querySelector(`.${prefix}sub-delay-value`);
+        const display = this.panel?.querySelector(`.${prefix}player-sub-delay-value`);
         if (display) display.textContent = this.formatOffset(this.offset);
-        const slider = this.panel?.querySelector(`.${prefix}sub-delay-slider`) as HTMLInputElement;
+        const slider = this.panel?.querySelector(`.${prefix}player-sub-delay-slider`) as HTMLInputElement;
         if (slider) slider.value = this.offset.toString();
     }
 
@@ -515,25 +515,25 @@ export class SubtitleMenu implements UIComponent {
 
         // Header
         const header = document.createElement('div');
-        header.className = `${p}sub-header`;
+        header.className = `${p}player-sub-header`;
 
         const headerLeft = document.createElement('div');
-        headerLeft.className = `${p}sub-header-left`;
+        headerLeft.className = `${p}player-sub-header-left`;
 
         const backBtn = document.createElement('button');
-        backBtn.className = `${p}sub-header-btn`;
+        backBtn.className = `${p}player-sub-header-btn`;
         backBtn.type = 'button';
         backBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`;
         backBtn.addEventListener('click', (e) => { e.stopPropagation(); this.closePanel(); });
         headerLeft.appendChild(backBtn);
 
         const titleSpan = document.createElement('span');
-        titleSpan.className = `${p}sub-header-title`;
+        titleSpan.className = `${p}player-sub-header-title`;
         titleSpan.textContent = 'Subtitles';
         headerLeft.appendChild(titleSpan);
 
         const customizeBtn = document.createElement('button');
-        customizeBtn.className = `${p}sub-customize-btn`;
+        customizeBtn.className = `${p}player-sub-customize-btn`;
         customizeBtn.type = 'button';
         customizeBtn.textContent = 'Customize';
         customizeBtn.addEventListener('click', (e) => {
@@ -548,14 +548,14 @@ export class SubtitleMenu implements UIComponent {
 
         // Content wrapper
         const content = document.createElement('div');
-        content.className = `${p}sub-content`;
+        content.className = `${p}player-sub-content`;
 
         // ── Enable Subtitles toggle row ──
         const toggleRow = document.createElement('div');
-        toggleRow.className = `${p}sub-toggle-row`;
+        toggleRow.className = `${p}player-sub-toggle-row`;
 
         const toggleLabel = document.createElement('span');
-        toggleLabel.className = `${p}sub-toggle-label`;
+        toggleLabel.className = `${p}player-sub-toggle-label`;
         toggleLabel.textContent = 'Enable Subtitles';
 
         const toggle = this.createToggle(this.activeTrackId !== null, (checked) => {
@@ -577,14 +577,14 @@ export class SubtitleMenu implements UIComponent {
         // ── Search bar (only if >8 tracks) ──
         if (this.tracks.length > 8) {
             const searchWrap = document.createElement('div');
-            searchWrap.className = `${p}sub-search`;
+            searchWrap.className = `${p}player-sub-search`;
 
             const searchIcon = document.createElement('span');
-            searchIcon.className = `${p}sub-search-icon`;
+            searchIcon.className = `${p}player-sub-search-icon`;
             searchIcon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
 
             this.searchInput = document.createElement('input');
-            this.searchInput.className = `${p}sub-search-input`;
+            this.searchInput.className = `${p}player-sub-search-input`;
             this.searchInput.type = 'text';
             this.searchInput.placeholder = 'Search languages...';
             this.searchInput.value = this.searchQuery;
@@ -601,7 +601,7 @@ export class SubtitleMenu implements UIComponent {
 
         // ── Track list ──
         const trackList = document.createElement('div');
-        trackList.className = `${p}sub-track-list`;
+        trackList.className = `${p}player-sub-track-list`;
         trackList.addEventListener('scroll', (e) => e.stopPropagation(), { passive: true });
         this.trackListEl = trackList;
 
@@ -624,7 +624,7 @@ export class SubtitleMenu implements UIComponent {
 
         if (filtered.length === 0 && this.searchQuery.trim() !== '') {
             const empty = document.createElement('div');
-            empty.className = `${p}sub-empty`;
+            empty.className = `${p}player-sub-empty`;
             empty.textContent = `No results for "${this.searchQuery}"`;
             container.appendChild(empty);
             return;
@@ -632,7 +632,7 @@ export class SubtitleMenu implements UIComponent {
 
         if (filtered.length === 0) {
             const empty = document.createElement('div');
-            empty.className = `${p}sub-empty`;
+            empty.className = `${p}player-sub-empty`;
             empty.textContent = 'No subtitles available';
             container.appendChild(empty);
             return;
@@ -642,21 +642,21 @@ export class SubtitleMenu implements UIComponent {
         for (const track of filtered) {
             const isActive = track.id === this.activeTrackId;
             const row = document.createElement('button');
-            row.className = `${p}sub-track-item${isActive ? ` ${p}sub-track-item--active` : ''}`;
+            row.className = `${p}player-sub-track-item${isActive ? ` ${p}player-sub-track-item--active` : ''}`;
             row.type = 'button';
             row.setAttribute('role', 'menuitem');
             row.setAttribute('aria-checked', String(isActive));
 
             const label = document.createElement('span');
-            label.className = `${p}sub-track-label`;
+            label.className = `${p}player-sub-track-label`;
             label.textContent = track.label;
 
             const right = document.createElement('span');
-            right.className = `${p}sub-track-right`;
+            right.className = `${p}player-sub-track-right`;
 
             if (isActive) {
                 const check = document.createElement('span');
-                check.className = `${p}sub-check`;
+                check.className = `${p}player-sub-check`;
                 check.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
                 right.appendChild(check);
             }
@@ -687,13 +687,13 @@ export class SubtitleMenu implements UIComponent {
 
         // Header
         const header = document.createElement('div');
-        header.className = `${p}sub-header`;
+        header.className = `${p}player-sub-header`;
 
         const headerLeft = document.createElement('div');
-        headerLeft.className = `${p}sub-header-left`;
+        headerLeft.className = `${p}player-sub-header-left`;
 
         const backBtn = document.createElement('button');
-        backBtn.className = `${p}sub-header-btn`;
+        backBtn.className = `${p}player-sub-header-btn`;
         backBtn.type = 'button';
         backBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`;
         backBtn.addEventListener('click', (e) => {
@@ -704,7 +704,7 @@ export class SubtitleMenu implements UIComponent {
         headerLeft.appendChild(backBtn);
 
         const titleSpan = document.createElement('span');
-        titleSpan.className = `${p}sub-header-title`;
+        titleSpan.className = `${p}player-sub-header-title`;
         titleSpan.textContent = 'Customize';
         headerLeft.appendChild(titleSpan);
 
@@ -714,7 +714,7 @@ export class SubtitleMenu implements UIComponent {
 
         // Scrollable content
         const content = document.createElement('div');
-        content.className = `${p}sub-customize-content`;
+        content.className = `${p}player-sub-customize-content`;
 
         // ── Subtitle Delay ──
         this.buildDelaySection(content);
@@ -753,7 +753,7 @@ export class SubtitleMenu implements UIComponent {
 
         // ── Reset Button ──
         const resetBtn = document.createElement('button');
-        resetBtn.className = `${p}sub-reset-btn`;
+        resetBtn.className = `${p}player-sub-reset-btn`;
         resetBtn.type = 'button';
         resetBtn.textContent = 'Reset to defaults';
         resetBtn.addEventListener('click', (e) => {
@@ -773,16 +773,16 @@ export class SubtitleMenu implements UIComponent {
         const p = this.config.classPrefix ?? '';
 
         const group = document.createElement('div');
-        group.className = `${p}sub-setting-group`;
+        group.className = `${p}player-sub-setting-group`;
 
         const label = document.createElement('p');
-        label.className = `${p}sub-setting-label`;
+        label.className = `${p}player-sub-setting-label`;
         label.textContent = 'Subtitle delay';
         group.appendChild(label);
 
         // Slider
         const sliderWrap = document.createElement('div');
-        sliderWrap.className = `${p}sub-slider-wrap`;
+        sliderWrap.className = `${p}player-sub-slider-wrap`;
 
         const slider = document.createElement('input');
         slider.type = 'range';
@@ -790,10 +790,10 @@ export class SubtitleMenu implements UIComponent {
         slider.max = '5';
         slider.step = '0.1';
         slider.value = this.offset.toString();
-        slider.className = `${p}sub-delay-slider ${p}sub-range`;
+        slider.className = `${p}player-sub-delay-slider ${p}player-sub-range`;
 
         const valueDisplay = document.createElement('span');
-        valueDisplay.className = `${p}sub-delay-value ${p}sub-range-value`;
+        valueDisplay.className = `${p}player-sub-delay-value ${p}player-sub-range-value`;
         valueDisplay.textContent = this.formatOffset(this.offset);
 
         slider.addEventListener('input', (e) => {
@@ -810,10 +810,10 @@ export class SubtitleMenu implements UIComponent {
 
         // +/- buttons
         const btnRow = document.createElement('div');
-        btnRow.className = `${p}sub-delay-btns`;
+        btnRow.className = `${p}player-sub-delay-btns`;
 
         const minusBtn = document.createElement('button');
-        minusBtn.className = `${p}sub-delay-btn`;
+        minusBtn.className = `${p}player-sub-delay-btn`;
         minusBtn.type = 'button';
         minusBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Earlier</span>`;
         minusBtn.addEventListener('click', (e) => {
@@ -826,11 +826,11 @@ export class SubtitleMenu implements UIComponent {
         });
 
         const display = document.createElement('span');
-        display.className = `${p}sub-delay-display`;
+        display.className = `${p}player-sub-delay-display`;
         display.textContent = this.formatOffset(this.offset);
 
         const plusBtn = document.createElement('button');
-        plusBtn.className = `${p}sub-delay-btn`;
+        plusBtn.className = `${p}player-sub-delay-btn`;
         plusBtn.type = 'button';
         plusBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Later</span>`;
         plusBtn.addEventListener('click', (e) => {
@@ -858,17 +858,17 @@ export class SubtitleMenu implements UIComponent {
         const p = this.config.classPrefix ?? '';
 
         const group = document.createElement('div');
-        group.className = `${p}sub-setting-group`;
+        group.className = `${p}player-sub-setting-group`;
 
         const row = document.createElement('div');
-        row.className = `${p}sub-setting-row`;
+        row.className = `${p}player-sub-setting-row`;
 
         const label = document.createElement('p');
-        label.className = `${p}sub-setting-label`;
+        label.className = `${p}player-sub-setting-label`;
         label.textContent = labelText;
 
         const valDisplay = document.createElement('span');
-        valDisplay.className = `${p}sub-range-value`;
+        valDisplay.className = `${p}player-sub-range-value`;
         valDisplay.textContent = `${Math.round(value)}${unit}`;
 
         row.appendChild(label);
@@ -881,7 +881,7 @@ export class SubtitleMenu implements UIComponent {
         slider.max = String(max);
         slider.step = String(step);
         slider.value = String(value);
-        slider.className = `${p}sub-range`;
+        slider.className = `${p}player-sub-range`;
 
         slider.addEventListener('input', (e) => {
             e.stopPropagation();
@@ -901,10 +901,10 @@ export class SubtitleMenu implements UIComponent {
         const p = this.config.classPrefix ?? '';
 
         const row = document.createElement('div');
-        row.className = `${p}sub-toggle-row`;
+        row.className = `${p}player-sub-toggle-row`;
 
         const label = document.createElement('span');
-        label.className = `${p}sub-toggle-label`;
+        label.className = `${p}player-sub-toggle-label`;
         label.textContent = labelText;
 
         const toggle = this.createToggle(value, onChange);
@@ -918,30 +918,30 @@ export class SubtitleMenu implements UIComponent {
         const p = this.config.classPrefix ?? '';
 
         const group = document.createElement('div');
-        group.className = `${p}sub-setting-group`;
+        group.className = `${p}player-sub-setting-group`;
 
         const label = document.createElement('p');
-        label.className = `${p}sub-setting-label`;
+        label.className = `${p}player-sub-setting-label`;
         label.textContent = 'Text color';
         group.appendChild(label);
 
         const colors = ['#ffffff', '#80b1fa', '#e2e535', '#10b239', '#ff6b6b', '#ffa500'];
         const swatchRow = document.createElement('div');
-        swatchRow.className = `${p}sub-color-row`;
+        swatchRow.className = `${p}player-sub-color-row`;
 
         for (const color of colors) {
             const btn = document.createElement('button');
-            btn.className = `${p}sub-color-swatch${this.appearance.textColor === color ? ` ${p}sub-color-swatch--active` : ''}`;
+            btn.className = `${p}player-sub-color-swatch${this.appearance.textColor === color ? ` ${p}player-sub-color-swatch--active` : ''}`;
             btn.type = 'button';
 
             const circle = document.createElement('span');
-            circle.className = `${p}sub-color-circle`;
+            circle.className = `${p}player-sub-color-circle`;
             circle.style.background = color;
             btn.appendChild(circle);
 
             if (this.appearance.textColor === color) {
                 const check = document.createElement('span');
-                check.className = `${p}sub-color-check`;
+                check.className = `${p}player-sub-color-check`;
                 check.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="${this.getContrastColor(color)}"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
                 circle.appendChild(check);
             }
@@ -957,12 +957,12 @@ export class SubtitleMenu implements UIComponent {
 
         // Custom color picker
         const customWrap = document.createElement('div');
-        customWrap.className = `${p}sub-color-custom`;
+        customWrap.className = `${p}player-sub-color-custom`;
 
         const colorInput = document.createElement('input');
         colorInput.type = 'color';
         colorInput.value = this.appearance.textColor;
-        colorInput.className = `${p}sub-color-input`;
+        colorInput.className = `${p}player-sub-color-input`;
         colorInput.addEventListener('input', (e) => {
             e.stopPropagation();
             this.appearance.textColor = (e.target as HTMLInputElement).value;
@@ -971,7 +971,7 @@ export class SubtitleMenu implements UIComponent {
         });
 
         const pickerIcon = document.createElement('span');
-        pickerIcon.className = `${p}sub-color-picker-icon`;
+        pickerIcon.className = `${p}player-sub-color-picker-icon`;
         pickerIcon.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.66 5.41l.92.92-2.69 2.69-.92-.92 2.69-2.69M17.67 3c-.26 0-.51.1-.71.29l-3.12 3.12-1.93-1.91-1.41 1.41 1.42 1.42L3 16.25V21h4.75l8.92-8.92 1.42 1.42 1.41-1.41-1.92-1.92 3.12-3.12c.4-.4.4-1.03.01-1.42l-2.34-2.34c-.2-.19-.45-.29-.71-.29z"/></svg>`;
 
         customWrap.appendChild(colorInput);
@@ -986,17 +986,17 @@ export class SubtitleMenu implements UIComponent {
         const p = this.config.classPrefix ?? '';
 
         const group = document.createElement('div');
-        group.className = `${p}sub-setting-group`;
+        group.className = `${p}player-sub-setting-group`;
 
         const row = document.createElement('div');
-        row.className = `${p}sub-setting-row`;
+        row.className = `${p}player-sub-setting-row`;
 
         const label = document.createElement('p');
-        label.className = `${p}sub-setting-label`;
+        label.className = `${p}player-sub-setting-label`;
         label.textContent = 'Vertical position';
 
         const btnGroup = document.createElement('div');
-        btnGroup.className = `${p}sub-pos-btns`;
+        btnGroup.className = `${p}player-sub-pos-btns`;
 
         const positions: Array<{ value: 'default' | 'high'; label: string }> = [
             { value: 'default', label: 'Default' },
@@ -1005,7 +1005,7 @@ export class SubtitleMenu implements UIComponent {
 
         for (const pos of positions) {
             const btn = document.createElement('button');
-            btn.className = `${p}sub-pos-btn${this.appearance.verticalPosition === pos.value ? ` ${p}sub-pos-btn--active` : ''}`;
+            btn.className = `${p}player-sub-pos-btn${this.appearance.verticalPosition === pos.value ? ` ${p}player-sub-pos-btn--active` : ''}`;
             btn.type = 'button';
             btn.textContent = pos.label;
             btn.addEventListener('click', (e) => {
@@ -1028,19 +1028,19 @@ export class SubtitleMenu implements UIComponent {
     private createToggle(checked: boolean, onChange: (val: boolean) => void): HTMLElement {
         const p = this.config.classPrefix ?? '';
         const wrap = document.createElement('button');
-        wrap.className = `${p}sub-toggle${checked ? ` ${p}sub-toggle--on` : ''}`;
+        wrap.className = `${p}player-sub-toggle${checked ? ` ${p}player-sub-toggle--on` : ''}`;
         wrap.type = 'button';
         wrap.setAttribute('role', 'switch');
         wrap.setAttribute('aria-checked', String(checked));
 
         const knob = document.createElement('span');
-        knob.className = `${p}sub-toggle-knob`;
+        knob.className = `${p}player-sub-toggle-knob`;
         wrap.appendChild(knob);
 
         wrap.addEventListener('click', (e) => {
             e.stopPropagation();
-            const newState = !wrap.classList.contains(`${p}sub-toggle--on`);
-            wrap.classList.toggle(`${p}sub-toggle--on`, newState);
+            const newState = !wrap.classList.contains(`${p}player-sub-toggle--on`);
+            wrap.classList.toggle(`${p}player-sub-toggle--on`, newState);
             wrap.setAttribute('aria-checked', String(newState));
             onChange(newState);
         });
@@ -1051,7 +1051,7 @@ export class SubtitleMenu implements UIComponent {
     private createDivider(): HTMLElement {
         const p = this.config.classPrefix ?? '';
         const div = document.createElement('hr');
-        div.className = `${p}sub-divider`;
+        div.className = `${p}player-sub-divider`;
         return div;
     }
 

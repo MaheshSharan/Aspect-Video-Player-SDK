@@ -854,12 +854,12 @@ export class BigPlayButton implements UIComponent {
     render(): HTMLElement {
         const prefix = this.config.classPrefix ?? '';
         this.element = document.createElement('button');
-        this.element.className = `${prefix}big-play`;
+        this.element.className = `${prefix}player-big-play`;
         this.element.setAttribute('aria-label', 'Play');
         this.element.setAttribute('type', 'button');
 
         const circle = document.createElement('span');
-        circle.className = `${prefix}big-play__circle`;
+        circle.className = `${prefix}player-big-play__circle`;
         circle.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
         this.element.appendChild(circle);
 
@@ -875,7 +875,7 @@ export class BigPlayButton implements UIComponent {
         if (!this.element) return;
         const prefix = this.config.classPrefix ?? '';
         const hide = snapshot.state === 'playing' || snapshot.state === 'buffering';
-        this.element.classList.toggle(`${prefix}big-play--hidden`, hide);
+        this.element.classList.toggle(`${prefix}player-big-play--hidden`, hide);
     }
 
     destroy(): void {
@@ -917,13 +917,13 @@ export class DoubleTapSeek implements UIComponent {
 
         // Left ripple
         this.leftRipple = document.createElement('div');
-        this.leftRipple.className = `${prefix}seek-ripple ${prefix}seek-ripple--left`;
-        this.leftRipple.innerHTML = `<span class="${prefix}seek-ripple__text">−${this.seekSeconds}s</span>`;
+        this.leftRipple.className = `${prefix}player-seek-ripple ${prefix}player-seek-ripple--left`;
+        this.leftRipple.innerHTML = `<span class="${prefix}player-seek-ripple__text">−${this.seekSeconds}s</span>`;
 
         // Right ripple
         this.rightRipple = document.createElement('div');
-        this.rightRipple.className = `${prefix}seek-ripple ${prefix}seek-ripple--right`;
-        this.rightRipple.innerHTML = `<span class="${prefix}seek-ripple__text">+${this.seekSeconds}s</span>`;
+        this.rightRipple.className = `${prefix}player-seek-ripple ${prefix}player-seek-ripple--right`;
+        this.rightRipple.innerHTML = `<span class="${prefix}player-seek-ripple__text">+${this.seekSeconds}s</span>`;
 
         this.container.appendChild(this.leftRipple);
         this.container.appendChild(this.rightRipple);
@@ -969,12 +969,12 @@ export class DoubleTapSeek implements UIComponent {
         const el = side === 'left' ? this.leftRipple : this.rightRipple;
         if (!el) return;
 
-        el.classList.add(`${prefix}seek-ripple--active`);
+        el.classList.add(`${prefix}player-seek-ripple--active`);
 
         if (this.hideTimer !== null) clearTimeout(this.hideTimer);
         this.hideTimer = window.setTimeout(() => {
-            this.leftRipple?.classList.remove(`${prefix}seek-ripple--active`);
-            this.rightRipple?.classList.remove(`${prefix}seek-ripple--active`);
+            this.leftRipple?.classList.remove(`${prefix}player-seek-ripple--active`);
+            this.rightRipple?.classList.remove(`${prefix}player-seek-ripple--active`);
         }, 600);
     }
 }
