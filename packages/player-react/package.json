@@ -1,6 +1,6 @@
 {
     "name": "aspect-player-react",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "React wrapper for Aspect Video Player SDK",
     "license": "MIT",
     "author": "Mahesh Sharan",

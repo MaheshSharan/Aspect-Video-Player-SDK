@@ -1,6 +1,6 @@
 {
   "name": "aspect-video-player-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Production-grade modular video player SDK with Netflix-style UI",
   "license": "MIT",
