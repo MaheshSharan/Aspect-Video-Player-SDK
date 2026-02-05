@@ -1,6 +1,6 @@
 {
     "name": "aspect-player-core",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "Headless video player core engine with HLS/DASH/MP4 support",
     "license": "MIT",
     "author": "Mahesh Sharan",
