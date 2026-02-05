@@ -23,7 +23,8 @@ export {
     SkipBackButton,
     SkipForwardButton,
     TitleDisplay,
-
+    BigPlayButton,
+    DoubleTapSeek,
 } from './controls';
 
 // Menus
@@ -34,6 +35,9 @@ export {
     ErrorOverlay,
     SubtitleMenu,
 } from './menus_v3';
+
+export type { SubtitleAppearance } from './menus_v3';
+export { DEFAULT_APPEARANCE } from './menus_v3';
 
 // Player UI
 export { PlayerUI, createPlayerUI } from './player-ui';

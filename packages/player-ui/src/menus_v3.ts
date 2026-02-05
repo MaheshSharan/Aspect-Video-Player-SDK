@@ -6,6 +6,31 @@ import { CSS_CLASSES } from './types';
 import type { SubtitleTrack } from './subtitles';
 
 /**
+ * Subtitle appearance settings interface.
+ */
+export interface SubtitleAppearance {
+    /** Font size as percentage (50-200), default 100 */
+    fontSize: number;
+    /** Text color as hex string, default '#ffffff' */
+    textColor: string;
+    /** Background opacity (0-100), default 50 */
+    backgroundOpacity: number;
+    /** Bold text enabled */
+    bold: boolean;
+    /** Vertical position: 'default' (bottom) or 'high' */
+    verticalPosition: 'default' | 'high';
+}
+
+/** Default appearance settings */
+export const DEFAULT_APPEARANCE: SubtitleAppearance = {
+    fontSize: 100,
+    textColor: '#ffffff',
+    backgroundOpacity: 50,
+    bold: false,
+    verticalPosition: 'default',
+};
+
+/**
  * Quality selector component.
  */
 export class QualitySelector implements UIComponent {
@@ -352,33 +377,43 @@ export class ErrorOverlay implements UIComponent {
 }
 
 /**
- * Subtitle menu component with track selection and sync offset.
- * Features toggle switch in header, improved scrolling, and fast navigation.
+ * Modern subtitle menu with track list, customize panel, and appearance settings.
+ * 
+ * Views:
+ * 1. Track List — Header with back arrow, "Subtitles", "Customize" link. 
+ *    Toggle for enable/disable, Off option, Auto select, then language list.
+ * 2. Customize — Subtitle delay, background opacity, text size, bold, color, position, reset.
  */
 export class SubtitleMenu implements UIComponent {
     readonly name = 'subtitle-menu';
 
     private element: HTMLDivElement | null = null;
     private button: HTMLButtonElement | null = null;
-    private menu: HTMLDivElement | null = null;
+    private panel: HTMLDivElement | null = null;
     private trackListEl: HTMLDivElement | null = null;
+    private searchInput: HTMLInputElement | null = null;
     private isOpen = false;
     private tracks: SubtitleTrack[] = [];
     private activeTrackId: string | null = null;
     private offset = 0;
     private savedScrollPosition = 0;
-    private showSettings = false;
+    private currentView: 'tracks' | 'customize' = 'tracks';
+    private searchQuery = '';
+    private appearance: SubtitleAppearance = { ...DEFAULT_APPEARANCE };
 
     private readonly onSelect: (trackId: string | null) => void;
     private readonly onOffsetChange: (offset: number) => void;
+    private onAppearanceChange: ((appearance: SubtitleAppearance) => void) | null = null;
 
     constructor(
         private readonly config: PlayerUIConfig,
         onSelect: (trackId: string | null) => void,
-        onOffsetChange: (offset: number) => void
+        onOffsetChange: (offset: number) => void,
+        onAppearanceChange?: (appearance: SubtitleAppearance) => void
     ) {
         this.onSelect = onSelect;
         this.onOffsetChange = onOffsetChange;
+        this.onAppearanceChange = onAppearanceChange ?? null;
     }
 
     render(): HTMLElement {
@@ -391,341 +426,637 @@ export class SubtitleMenu implements UIComponent {
         this.button = document.createElement('button');
         this.button.className = `${prefix}${CSS_CLASSES.BUTTON} ${prefix}${CSS_CLASSES.BUTTON_SETTINGS}`;
         this.button.setAttribute('aria-label', 'Subtitles');
-        this.button.setAttribute('aria-haspopup', 'menu');
+        this.button.setAttribute('aria-haspopup', 'dialog');
         this.button.setAttribute('aria-expanded', 'false');
         this.button.setAttribute('type', 'button');
-        this.button.innerHTML = this.getIcon();
+        this.button.innerHTML = this.getSubtitleIcon();
         this.button.addEventListener('click', this.handleButtonClick);
 
-        this.menu = document.createElement('div');
-        this.menu.className = `${prefix}${CSS_CLASSES.MENU} ${prefix}subtitle-settings-menu`;
-        this.menu.setAttribute('role', 'menu');
-        this.menu.setAttribute('aria-label', 'Subtitle options');
-        this.menu.style.display = 'none';
+        this.panel = document.createElement('div');
+        this.panel.className = `${prefix}sub-panel`;
+        this.panel.setAttribute('role', 'dialog');
+        this.panel.setAttribute('aria-label', 'Subtitle options');
+        this.panel.style.display = 'none';
+
+        // Prevent clicks inside panel from bubbling to video (which triggers play/pause)
+        this.panel.addEventListener('click', (e) => e.stopPropagation());
+        this.panel.addEventListener('mousedown', (e) => e.stopPropagation());
 
         this.element.appendChild(this.button);
-        this.element.appendChild(this.menu);
+        this.element.appendChild(this.panel);
 
         document.addEventListener('click', this.handleOutsideClick);
 
         return this.element;
     }
 
-    update(_snapshot: PlayerSnapshot): void {
-        // State updates handled via setTracks/setOffset methods
-    }
+    update(_snapshot: PlayerSnapshot): void { /* updated via setTracks/setOffset */ }
 
     setTracks(tracks: SubtitleTrack[], activeId: string | null): void {
         this.tracks = tracks;
         this.activeTrackId = activeId;
-        if (this.isOpen && !this.showSettings) {
-            // Save scroll position before update
+        if (this.isOpen && this.currentView === 'tracks') {
             this.saveScrollPosition();
-            this.updateMenu();
-            // Restore scroll position after update
+            this.renderCurrentView();
             this.restoreScrollPosition();
         }
     }
 
     setOffset(offset: number): void {
         this.offset = offset;
-        this.updateOffsetDisplay();
+        // Live-update offset display without full re-render
+        const prefix = this.config.classPrefix ?? '';
+        const display = this.panel?.querySelector(`.${prefix}sub-delay-value`);
+        if (display) display.textContent = this.formatOffset(this.offset);
+        const slider = this.panel?.querySelector(`.${prefix}sub-delay-slider`) as HTMLInputElement;
+        if (slider) slider.value = this.offset.toString();
     }
+
+    getAppearance(): SubtitleAppearance { return { ...this.appearance }; }
 
     destroy(): void {
         this.button?.removeEventListener('click', this.handleButtonClick);
         document.removeEventListener('click', this.handleOutsideClick);
         this.element = null;
+        this.panel = null;
         this.trackListEl = null;
+        this.searchInput = null;
     }
 
+    // ── Internals ──────────────────────────────────────────
+
     private saveScrollPosition(): void {
-        if (this.trackListEl) {
-            this.savedScrollPosition = this.trackListEl.scrollTop;
-        }
+        if (this.trackListEl) this.savedScrollPosition = this.trackListEl.scrollTop;
     }
 
     private restoreScrollPosition(): void {
         if (this.trackListEl) {
-            // Use requestAnimationFrame to ensure DOM is updated
             requestAnimationFrame(() => {
-                if (this.trackListEl) {
-                    this.trackListEl.scrollTop = this.savedScrollPosition;
-                }
+                if (this.trackListEl) this.trackListEl.scrollTop = this.savedScrollPosition;
             });
         }
     }
 
-    private updateMenu(): void {
-        if (this.menu === null) return;
-
-        const prefix = this.config.classPrefix ?? '';
-        this.menu.innerHTML = '';
-
-        if (this.showSettings) {
-            this.renderSettingsView(prefix);
+    private renderCurrentView(): void {
+        if (!this.panel) return;
+        this.panel.innerHTML = '';
+        if (this.currentView === 'customize') {
+            this.renderCustomizeView();
         } else {
-            this.renderTrackListView(prefix);
+            this.renderTrackListView();
         }
     }
 
-    private renderTrackListView(prefix: string): void {
-        if (this.menu === null) return;
+    // ── Track List View ────────────────────────────────────
 
-        // --- Header with Toggle ---
+    private renderTrackListView(): void {
+        if (!this.panel) return;
+        const p = this.config.classPrefix ?? '';
+
+        // Header
         const header = document.createElement('div');
-        header.className = `${prefix}subtitle-menu-header`;
+        header.className = `${p}sub-header`;
 
-        const titleRow = document.createElement('div');
-        titleRow.className = `${prefix}subtitle-title-row`;
+        const headerLeft = document.createElement('div');
+        headerLeft.className = `${p}sub-header-left`;
 
-        const title = document.createElement('span');
-        title.className = `${prefix}subtitle-menu-title`;
-        title.textContent = 'Subtitles';
-        titleRow.appendChild(title);
+        const backBtn = document.createElement('button');
+        backBtn.className = `${p}sub-header-btn`;
+        backBtn.type = 'button';
+        backBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`;
+        backBtn.addEventListener('click', (e) => { e.stopPropagation(); this.closePanel(); });
+        headerLeft.appendChild(backBtn);
 
-        // Toggle switch
-        const toggleContainer = document.createElement('label');
-        toggleContainer.className = `${prefix}subtitle-toggle`;
-        toggleContainer.setAttribute('aria-label', this.activeTrackId !== null ? 'Subtitles enabled' : 'Subtitles disabled');
+        const titleSpan = document.createElement('span');
+        titleSpan.className = `${p}sub-header-title`;
+        titleSpan.textContent = 'Subtitles';
+        headerLeft.appendChild(titleSpan);
 
-        const toggleInput = document.createElement('input');
-        toggleInput.type = 'checkbox';
-        toggleInput.checked = this.activeTrackId !== null;
-        toggleInput.className = `${prefix}subtitle-toggle-input`;
-        toggleInput.addEventListener('change', (e) => {
+        const customizeBtn = document.createElement('button');
+        customizeBtn.className = `${p}sub-customize-btn`;
+        customizeBtn.type = 'button';
+        customizeBtn.textContent = 'Customize';
+        customizeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if ((e.target as HTMLInputElement).checked) {
-                // Enable: select first track or last selected
-                const firstTrack = this.tracks[0];
-                if (firstTrack) {
-                    this.onSelect(firstTrack.id);
-                }
+            this.currentView = 'customize';
+            this.renderCurrentView();
+        });
+
+        header.appendChild(headerLeft);
+        header.appendChild(customizeBtn);
+        this.panel.appendChild(header);
+
+        // Content wrapper
+        const content = document.createElement('div');
+        content.className = `${p}sub-content`;
+
+        // ── Enable Subtitles toggle row ──
+        const toggleRow = document.createElement('div');
+        toggleRow.className = `${p}sub-toggle-row`;
+
+        const toggleLabel = document.createElement('span');
+        toggleLabel.className = `${p}sub-toggle-label`;
+        toggleLabel.textContent = 'Enable Subtitles';
+
+        const toggle = this.createToggle(this.activeTrackId !== null, (checked) => {
+            if (checked) {
+                const first = this.tracks[0];
+                if (first) this.onSelect(first.id);
             } else {
-                // Disable subtitles
                 this.onSelect(null);
             }
         });
 
-        const toggleSlider = document.createElement('span');
-        toggleSlider.className = `${prefix}subtitle-toggle-slider`;
+        toggleRow.appendChild(toggleLabel);
+        toggleRow.appendChild(toggle);
+        content.appendChild(toggleRow);
 
-        toggleContainer.appendChild(toggleInput);
-        toggleContainer.appendChild(toggleSlider);
-        titleRow.appendChild(toggleContainer);
+        // Divider
+        content.appendChild(this.createDivider());
 
-        header.appendChild(titleRow);
+        // ── Search bar (only if >8 tracks) ──
+        if (this.tracks.length > 8) {
+            const searchWrap = document.createElement('div');
+            searchWrap.className = `${p}sub-search`;
 
-        // Settings button row (only if subtitles are enabled)
-        if (this.activeTrackId !== null) {
-            const settingsRow = document.createElement('div');
-            settingsRow.className = `${prefix}subtitle-settings-row`;
+            const searchIcon = document.createElement('span');
+            searchIcon.className = `${p}sub-search-icon`;
+            searchIcon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
 
-            const settingsBtn = document.createElement('button');
-            settingsBtn.className = `${prefix}subtitle-settings-btn`;
-            settingsBtn.innerHTML = `${this.getSettingsIcon()} <span>Sync Settings</span>`;
-            settingsBtn.title = 'Subtitle Sync Settings';
-            settingsBtn.addEventListener('click', (e) => {
+            this.searchInput = document.createElement('input');
+            this.searchInput.className = `${p}sub-search-input`;
+            this.searchInput.type = 'text';
+            this.searchInput.placeholder = 'Search languages...';
+            this.searchInput.value = this.searchQuery;
+            this.searchInput.addEventListener('input', (e) => {
                 e.stopPropagation();
-                this.showSettings = true;
-                this.updateMenu();
+                this.searchQuery = (e.target as HTMLInputElement).value;
+                this.rebuildTrackList();
             });
-            settingsRow.appendChild(settingsBtn);
-            header.appendChild(settingsRow);
+
+            searchWrap.appendChild(searchIcon);
+            searchWrap.appendChild(this.searchInput);
+            content.appendChild(searchWrap);
         }
 
-        this.menu.appendChild(header);
-
-        // --- Track List with proper scroll handling ---
+        // ── Track list ──
         const trackList = document.createElement('div');
-        trackList.className = `${prefix}subtitle-track-list`;
+        trackList.className = `${p}sub-track-list`;
+        trackList.addEventListener('scroll', (e) => e.stopPropagation(), { passive: true });
         this.trackListEl = trackList;
 
-        // Prevent scroll events from bubbling and causing issues
-        trackList.addEventListener('scroll', (e) => {
-            e.stopPropagation();
-        }, { passive: true });
+        this.populateTrackList(trackList);
+        content.appendChild(trackList);
 
-        // Available tracks (no "Off" option - use toggle instead)
-        for (const track of this.tracks) {
-            const isActive = track.id === this.activeTrackId;
-            const item = this.createMenuItem(track.label, isActive, () => {
-                this.saveScrollPosition();
-                this.onSelect(track.id);
-                // Don't close menu, allow user to continue browsing
-            });
-            trackList.appendChild(item);
-        }
-
-        // Show empty state if no tracks
-        if (this.tracks.length === 0) {
-            const emptyState = document.createElement('div');
-            emptyState.className = `${prefix}subtitle-empty`;
-            emptyState.textContent = 'No subtitles available';
-            trackList.appendChild(emptyState);
-        }
-
-        this.menu.appendChild(trackList);
-
-        // Close button at bottom
-        const closeBtn = document.createElement('button');
-        closeBtn.className = `${prefix}subtitle-close-btn`;
-        closeBtn.textContent = 'Done';
-        closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.closeMenu();
-        });
-        this.menu.appendChild(closeBtn);
+        this.panel.appendChild(content);
     }
 
-    private renderSettingsView(prefix: string): void {
-        if (this.menu === null) return;
+    private populateTrackList(container: HTMLDivElement): void {
+        const p = this.config.classPrefix ?? '';
+        container.innerHTML = '';
 
-        const panel = document.createElement('div');
-        panel.className = `${prefix}subtitle-settings-panel`;
+        const filtered = this.searchQuery.trim() === ''
+            ? this.tracks
+            : this.tracks.filter(t =>
+                t.label.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                t.language.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
 
-        // Back button - instant navigation
+        if (filtered.length === 0 && this.searchQuery.trim() !== '') {
+            const empty = document.createElement('div');
+            empty.className = `${p}sub-empty`;
+            empty.textContent = `No results for "${this.searchQuery}"`;
+            container.appendChild(empty);
+            return;
+        }
+
+        if (filtered.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = `${p}sub-empty`;
+            empty.textContent = 'No subtitles available';
+            container.appendChild(empty);
+            return;
+        }
+
+        // Track items
+        for (const track of filtered) {
+            const isActive = track.id === this.activeTrackId;
+            const row = document.createElement('button');
+            row.className = `${p}sub-track-item${isActive ? ` ${p}sub-track-item--active` : ''}`;
+            row.type = 'button';
+            row.setAttribute('role', 'menuitem');
+            row.setAttribute('aria-checked', String(isActive));
+
+            const label = document.createElement('span');
+            label.className = `${p}sub-track-label`;
+            label.textContent = track.label;
+
+            const right = document.createElement('span');
+            right.className = `${p}sub-track-right`;
+
+            if (isActive) {
+                const check = document.createElement('span');
+                check.className = `${p}sub-check`;
+                check.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+                right.appendChild(check);
+            }
+
+            row.appendChild(label);
+            row.appendChild(right);
+
+            row.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.saveScrollPosition();
+                this.onSelect(track.id);
+            });
+            container.appendChild(row);
+        }
+    }
+
+    private rebuildTrackList(): void {
+        if (this.trackListEl) {
+            this.populateTrackList(this.trackListEl);
+        }
+    }
+
+    // ── Customize View ─────────────────────────────────────
+
+    private renderCustomizeView(): void {
+        if (!this.panel) return;
+        const p = this.config.classPrefix ?? '';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = `${p}sub-header`;
+
+        const headerLeft = document.createElement('div');
+        headerLeft.className = `${p}sub-header-left`;
+
         const backBtn = document.createElement('button');
-        backBtn.className = `${prefix}subtitle-back-btn`;
-        backBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back`;
+        backBtn.className = `${p}sub-header-btn`;
+        backBtn.type = 'button';
+        backBtn.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`;
         backBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.showSettings = false;
-            this.updateMenu();
+            this.currentView = 'tracks';
+            this.renderCurrentView();
         });
-        panel.appendChild(backBtn);
+        headerLeft.appendChild(backBtn);
 
-        // Offset Controls
-        const controlGroup = document.createElement('div');
-        controlGroup.className = `${prefix}offset-control-group`;
+        const titleSpan = document.createElement('span');
+        titleSpan.className = `${p}sub-header-title`;
+        titleSpan.textContent = 'Customize';
+        headerLeft.appendChild(titleSpan);
 
-        const headerRow = document.createElement('div');
-        headerRow.className = `${prefix}offset-label`;
-        headerRow.innerHTML = '<span>Sync Offset</span>';
+        header.appendChild(headerLeft);
+        header.appendChild(document.createElement('div')); // empty right slot
+        this.panel.appendChild(header);
 
-        // Value display in header
-        const valueDisplay = document.createElement('span');
-        valueDisplay.className = `${prefix}offset-value`;
-        valueDisplay.textContent = this.formatOffset(this.offset);
-        headerRow.appendChild(valueDisplay);
+        // Scrollable content
+        const content = document.createElement('div');
+        content.className = `${p}sub-customize-content`;
 
-        controlGroup.appendChild(headerRow);
+        // ── Subtitle Delay ──
+        this.buildDelaySection(content);
 
-        const sliderContainer = document.createElement('div');
-        sliderContainer.className = `${prefix}offset-slider-container`;
+        content.appendChild(this.createDivider());
 
-        // Minus button for precise control
-        const minusBtn = document.createElement('button');
-        minusBtn.className = `${prefix}offset-step-btn`;
-        minusBtn.innerHTML = '−';
-        minusBtn.title = 'Decrease offset';
-        minusBtn.addEventListener('click', (e) => {
+        // ── Background Opacity ──
+        this.buildSliderSetting(content, 'Background opacity', '%',
+            this.appearance.backgroundOpacity, 0, 100, 1,
+            (val) => { this.appearance.backgroundOpacity = val; this.emitAppearance(); });
+
+        content.appendChild(this.createDivider());
+
+        // ── Text Size ──
+        this.buildSliderSetting(content, 'Text size', '%',
+            this.appearance.fontSize, 50, 200, 5,
+            (val) => { this.appearance.fontSize = val; this.emitAppearance(); });
+
+        content.appendChild(this.createDivider());
+
+        // ── Bold Text ──
+        this.buildToggleSetting(content, 'Bold text', this.appearance.bold,
+            (val) => { this.appearance.bold = val; this.emitAppearance(); });
+
+        content.appendChild(this.createDivider());
+
+        // ── Text Color ──
+        this.buildColorSetting(content);
+
+        content.appendChild(this.createDivider());
+
+        // ── Vertical Position ──
+        this.buildPositionSetting(content);
+
+        content.appendChild(this.createDivider());
+
+        // ── Reset Button ──
+        const resetBtn = document.createElement('button');
+        resetBtn.className = `${p}sub-reset-btn`;
+        resetBtn.type = 'button';
+        resetBtn.textContent = 'Reset to defaults';
+        resetBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const newVal = Math.max(-5, this.offset - 0.1);
-            this.onOffsetChange(newVal);
-            this.offset = newVal;
-            valueDisplay.textContent = this.formatOffset(newVal);
-            slider.value = newVal.toString();
+            this.appearance = { ...DEFAULT_APPEARANCE };
+            this.offset = 0;
+            this.onOffsetChange(0);
+            this.emitAppearance();
+            this.renderCurrentView();
         });
+        content.appendChild(resetBtn);
+
+        this.panel.appendChild(content);
+    }
+
+    private buildDelaySection(container: HTMLElement): void {
+        const p = this.config.classPrefix ?? '';
+
+        const group = document.createElement('div');
+        group.className = `${p}sub-setting-group`;
+
+        const label = document.createElement('p');
+        label.className = `${p}sub-setting-label`;
+        label.textContent = 'Subtitle delay';
+        group.appendChild(label);
 
         // Slider
+        const sliderWrap = document.createElement('div');
+        sliderWrap.className = `${p}sub-slider-wrap`;
+
         const slider = document.createElement('input');
         slider.type = 'range';
         slider.min = '-5';
         slider.max = '5';
         slider.step = '0.1';
         slider.value = this.offset.toString();
-        slider.className = `${prefix}offset-slider ${prefix}player-slider`;
+        slider.className = `${p}sub-delay-slider ${p}sub-range`;
+
+        const valueDisplay = document.createElement('span');
+        valueDisplay.className = `${p}sub-delay-value ${p}sub-range-value`;
+        valueDisplay.textContent = this.formatOffset(this.offset);
 
         slider.addEventListener('input', (e) => {
             e.stopPropagation();
             const val = parseFloat((e.target as HTMLInputElement).value);
-            this.onOffsetChange(val);
             this.offset = val;
+            this.onOffsetChange(val);
             valueDisplay.textContent = this.formatOffset(val);
         });
 
-        // Plus button for precise control
+        sliderWrap.appendChild(slider);
+        sliderWrap.appendChild(valueDisplay);
+        group.appendChild(sliderWrap);
+
+        // +/- buttons
+        const btnRow = document.createElement('div');
+        btnRow.className = `${p}sub-delay-btns`;
+
+        const minusBtn = document.createElement('button');
+        minusBtn.className = `${p}sub-delay-btn`;
+        minusBtn.type = 'button';
+        minusBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Earlier</span>`;
+        minusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const v = Math.max(-5, this.offset - 0.1);
+            this.offset = v;
+            this.onOffsetChange(v);
+            slider.value = v.toString();
+            valueDisplay.textContent = this.formatOffset(v);
+        });
+
+        const display = document.createElement('span');
+        display.className = `${p}sub-delay-display`;
+        display.textContent = this.formatOffset(this.offset);
+
         const plusBtn = document.createElement('button');
-        plusBtn.className = `${prefix}offset-step-btn`;
-        plusBtn.innerHTML = '+';
-        plusBtn.title = 'Increase offset';
+        plusBtn.className = `${p}sub-delay-btn`;
+        plusBtn.type = 'button';
+        plusBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Later</span>`;
         plusBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const newVal = Math.min(5, this.offset + 0.1);
-            this.onOffsetChange(newVal);
-            this.offset = newVal;
-            valueDisplay.textContent = this.formatOffset(newVal);
-            slider.value = newVal.toString();
+            const v = Math.min(5, this.offset + 0.1);
+            this.offset = v;
+            this.onOffsetChange(v);
+            slider.value = v.toString();
+            valueDisplay.textContent = this.formatOffset(v);
         });
 
-        sliderContainer.appendChild(minusBtn);
-        sliderContainer.appendChild(slider);
-        sliderContainer.appendChild(plusBtn);
+        btnRow.appendChild(minusBtn);
+        btnRow.appendChild(display);
+        btnRow.appendChild(plusBtn);
+        group.appendChild(btnRow);
 
-        controlGroup.appendChild(sliderContainer);
+        container.appendChild(group);
+    }
 
-        // Reset button
-        const resetBtn = document.createElement('button');
-        resetBtn.className = `${prefix}offset-reset`;
-        resetBtn.textContent = 'Reset to 0';
-        resetBtn.addEventListener('click', (e) => {
+    private buildSliderSetting(
+        container: HTMLElement, labelText: string, unit: string,
+        value: number, min: number, max: number, step: number,
+        onChange: (val: number) => void
+    ): void {
+        const p = this.config.classPrefix ?? '';
+
+        const group = document.createElement('div');
+        group.className = `${p}sub-setting-group`;
+
+        const row = document.createElement('div');
+        row.className = `${p}sub-setting-row`;
+
+        const label = document.createElement('p');
+        label.className = `${p}sub-setting-label`;
+        label.textContent = labelText;
+
+        const valDisplay = document.createElement('span');
+        valDisplay.className = `${p}sub-range-value`;
+        valDisplay.textContent = `${Math.round(value)}${unit}`;
+
+        row.appendChild(label);
+        row.appendChild(valDisplay);
+        group.appendChild(row);
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = String(min);
+        slider.max = String(max);
+        slider.step = String(step);
+        slider.value = String(value);
+        slider.className = `${p}sub-range`;
+
+        slider.addEventListener('input', (e) => {
             e.stopPropagation();
-            this.onOffsetChange(0);
-            this.offset = 0;
-            valueDisplay.textContent = this.formatOffset(0);
-            slider.value = '0';
+            const v = parseFloat((e.target as HTMLInputElement).value);
+            valDisplay.textContent = `${Math.round(v)}${unit}`;
+            onChange(v);
         });
-        controlGroup.appendChild(resetBtn);
 
-        panel.appendChild(controlGroup);
-
-        // Hint text
-        const hint = document.createElement('p');
-        hint.className = `${prefix}offset-hint`;
-        hint.textContent = 'Positive values delay subtitles, negative values show them earlier.';
-        panel.appendChild(hint);
-
-        this.menu.appendChild(panel);
+        group.appendChild(slider);
+        container.appendChild(group);
     }
 
-    private getSettingsIcon(): string {
-        return `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>`;
+    private buildToggleSetting(
+        container: HTMLElement, labelText: string, value: boolean,
+        onChange: (val: boolean) => void
+    ): void {
+        const p = this.config.classPrefix ?? '';
+
+        const row = document.createElement('div');
+        row.className = `${p}sub-toggle-row`;
+
+        const label = document.createElement('span');
+        label.className = `${p}sub-toggle-label`;
+        label.textContent = labelText;
+
+        const toggle = this.createToggle(value, onChange);
+
+        row.appendChild(label);
+        row.appendChild(toggle);
+        container.appendChild(row);
     }
 
-    private createMenuItem(label: string, isActive: boolean, onClick: () => void): HTMLButtonElement {
-        const prefix = this.config.classPrefix ?? '';
-        const item = document.createElement('button');
-        item.className = `${prefix}${CSS_CLASSES.MENU_ITEM}${isActive ? ` ${prefix}${CSS_CLASSES.MENU_ITEM_ACTIVE}` : ''}`;
-        item.setAttribute('role', 'menuitem');
-        item.setAttribute('aria-checked', String(isActive));
+    private buildColorSetting(container: HTMLElement): void {
+        const p = this.config.classPrefix ?? '';
 
-        // Radio-style indicator for selection
-        const radioIcon = document.createElement('span');
-        radioIcon.className = `${prefix}subtitle-radio`;
-        radioIcon.setAttribute('aria-hidden', 'true');
+        const group = document.createElement('div');
+        group.className = `${p}sub-setting-group`;
 
-        const labelSpan = document.createElement('span');
-        labelSpan.textContent = label;
+        const label = document.createElement('p');
+        label.className = `${p}sub-setting-label`;
+        label.textContent = 'Text color';
+        group.appendChild(label);
 
-        item.appendChild(radioIcon);
-        item.appendChild(labelSpan);
-        item.addEventListener('click', onClick);
-        return item;
-    }
+        const colors = ['#ffffff', '#80b1fa', '#e2e535', '#10b239', '#ff6b6b', '#ffa500'];
+        const swatchRow = document.createElement('div');
+        swatchRow.className = `${p}sub-color-row`;
 
-    private updateOffsetDisplay(): void {
-        const prefix = this.config.classPrefix ?? '';
-        if (this.menu) {
-            const display = this.menu.querySelector(`.${prefix}offset-value`);
-            if (display) {
-                display.textContent = this.formatOffset(this.offset);
+        for (const color of colors) {
+            const btn = document.createElement('button');
+            btn.className = `${p}sub-color-swatch${this.appearance.textColor === color ? ` ${p}sub-color-swatch--active` : ''}`;
+            btn.type = 'button';
+
+            const circle = document.createElement('span');
+            circle.className = `${p}sub-color-circle`;
+            circle.style.background = color;
+            btn.appendChild(circle);
+
+            if (this.appearance.textColor === color) {
+                const check = document.createElement('span');
+                check.className = `${p}sub-color-check`;
+                check.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="${this.getContrastColor(color)}"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+                circle.appendChild(check);
             }
-            const slider = this.menu.querySelector(`.${prefix}offset-slider`) as HTMLInputElement;
-            if (slider) {
-                slider.value = this.offset.toString();
-            }
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.appearance.textColor = color;
+                this.emitAppearance();
+                this.renderCurrentView();
+            });
+            swatchRow.appendChild(btn);
         }
+
+        // Custom color picker
+        const customWrap = document.createElement('div');
+        customWrap.className = `${p}sub-color-custom`;
+
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.value = this.appearance.textColor;
+        colorInput.className = `${p}sub-color-input`;
+        colorInput.addEventListener('input', (e) => {
+            e.stopPropagation();
+            this.appearance.textColor = (e.target as HTMLInputElement).value;
+            this.emitAppearance();
+            this.renderCurrentView();
+        });
+
+        const pickerIcon = document.createElement('span');
+        pickerIcon.className = `${p}sub-color-picker-icon`;
+        pickerIcon.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.66 5.41l.92.92-2.69 2.69-.92-.92 2.69-2.69M17.67 3c-.26 0-.51.1-.71.29l-3.12 3.12-1.93-1.91-1.41 1.41 1.42 1.42L3 16.25V21h4.75l8.92-8.92 1.42 1.42 1.41-1.41-1.92-1.92 3.12-3.12c.4-.4.4-1.03.01-1.42l-2.34-2.34c-.2-.19-.45-.29-.71-.29z"/></svg>`;
+
+        customWrap.appendChild(colorInput);
+        customWrap.appendChild(pickerIcon);
+        swatchRow.appendChild(customWrap);
+
+        group.appendChild(swatchRow);
+        container.appendChild(group);
+    }
+
+    private buildPositionSetting(container: HTMLElement): void {
+        const p = this.config.classPrefix ?? '';
+
+        const group = document.createElement('div');
+        group.className = `${p}sub-setting-group`;
+
+        const row = document.createElement('div');
+        row.className = `${p}sub-setting-row`;
+
+        const label = document.createElement('p');
+        label.className = `${p}sub-setting-label`;
+        label.textContent = 'Vertical position';
+
+        const btnGroup = document.createElement('div');
+        btnGroup.className = `${p}sub-pos-btns`;
+
+        const positions: Array<{ value: 'default' | 'high'; label: string }> = [
+            { value: 'default', label: 'Default' },
+            { value: 'high', label: 'High' },
+        ];
+
+        for (const pos of positions) {
+            const btn = document.createElement('button');
+            btn.className = `${p}sub-pos-btn${this.appearance.verticalPosition === pos.value ? ` ${p}sub-pos-btn--active` : ''}`;
+            btn.type = 'button';
+            btn.textContent = pos.label;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.appearance.verticalPosition = pos.value;
+                this.emitAppearance();
+                this.renderCurrentView();
+            });
+            btnGroup.appendChild(btn);
+        }
+
+        row.appendChild(label);
+        row.appendChild(btnGroup);
+        group.appendChild(row);
+        container.appendChild(group);
+    }
+
+    // ── Shared UI Builders ─────────────────────────────────
+
+    private createToggle(checked: boolean, onChange: (val: boolean) => void): HTMLElement {
+        const p = this.config.classPrefix ?? '';
+        const wrap = document.createElement('button');
+        wrap.className = `${p}sub-toggle${checked ? ` ${p}sub-toggle--on` : ''}`;
+        wrap.type = 'button';
+        wrap.setAttribute('role', 'switch');
+        wrap.setAttribute('aria-checked', String(checked));
+
+        const knob = document.createElement('span');
+        knob.className = `${p}sub-toggle-knob`;
+        wrap.appendChild(knob);
+
+        wrap.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newState = !wrap.classList.contains(`${p}sub-toggle--on`);
+            wrap.classList.toggle(`${p}sub-toggle--on`, newState);
+            wrap.setAttribute('aria-checked', String(newState));
+            onChange(newState);
+        });
+
+        return wrap;
+    }
+
+    private createDivider(): HTMLElement {
+        const p = this.config.classPrefix ?? '';
+        const div = document.createElement('hr');
+        div.className = `${p}sub-divider`;
+        return div;
+    }
+
+    private emitAppearance(): void {
+        this.onAppearanceChange?.({ ...this.appearance });
     }
 
     private formatOffset(offset: number): string {
@@ -733,38 +1064,49 @@ export class SubtitleMenu implements UIComponent {
         return `${sign}${offset.toFixed(1)}s`;
     }
 
+    private getContrastColor(hex: string): string {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return (r * 299 + g * 587 + b * 114) / 1000 > 128 ? '#000000' : '#ffffff';
+    }
+
+    // ── Open / Close ───────────────────────────────────────
+
     private handleButtonClick = (e: MouseEvent): void => {
         e.stopPropagation();
-        this.isOpen ? this.closeMenu() : this.openMenu();
+        this.isOpen ? this.closePanel() : this.openPanel();
     };
 
     private handleOutsideClick = (e: MouseEvent): void => {
-        if (this.element !== null && !this.element.contains(e.target as Node)) {
-            this.closeMenu();
+        if (this.element && !this.element.contains(e.target as Node)) {
+            this.closePanel();
         }
     };
 
-    private openMenu(): void {
-        if (this.menu !== null) {
-            this.showSettings = false; // Always start at track list
-            this.savedScrollPosition = 0; // Reset scroll on open
-            this.updateMenu();
-            this.menu.style.display = 'block';
-            this.isOpen = true;
-            this.button?.setAttribute('aria-expanded', 'true');
-        }
+    private openPanel(): void {
+        if (!this.panel) return;
+        this.currentView = 'tracks';
+        this.searchQuery = '';
+        this.savedScrollPosition = 0;
+        this.renderCurrentView();
+        this.panel.style.display = 'flex';
+        this.isOpen = true;
+        this.button?.setAttribute('aria-expanded', 'true');
     }
 
-    private closeMenu(): void {
-        if (this.menu !== null) {
-            this.menu.style.display = 'none';
-            this.isOpen = false;
-            this.button?.setAttribute('aria-expanded', 'false');
-            this.trackListEl = null;
-        }
+    private closePanel(): void {
+        if (!this.panel) return;
+        this.panel.style.display = 'none';
+        this.isOpen = false;
+        this.button?.setAttribute('aria-expanded', 'false');
+        this.trackListEl = null;
+        this.searchInput = null;
     }
 
-    private getIcon(): string {
+    // ── Icons ──────────────────────────────────────────────
+
+    private getSubtitleIcon(): string {
         return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5C3.89 4 3 4.9 3 6V18C3 19.1 3.89 20 5 20H19C20.1 20 21 19.1 21 18V6C21 4.9 20.1 4 19 4ZM4 18V6C4 5.45 4.45 5 5 5H19C19.55 5 20 5.45 20 6V18C20 18.55 19.55 19 19 19H5C4.45 19 4 18.55 4 18ZM6 10H8V12H6V10ZM10 10H18V12H10V10ZM6 14H14V16H6V14Z"/></svg>`;
     }
 }

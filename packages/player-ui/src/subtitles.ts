@@ -1,6 +1,8 @@
 import type { PlayerUIConfig } from './types';
 import type { PlayerSnapshot } from 'aspect-player-core';
 import { createLogger } from 'aspect-player-shared';
+import type { SubtitleAppearance } from './menus_v3';
+import { DEFAULT_APPEARANCE } from './menus_v3';
 
 const logger = createLogger('subtitle-manager');
 
@@ -35,6 +37,7 @@ export class SubtitleManager {
     private currentCue: SubtitleCue | null = null;
     private enabled = false;
     private offset = 0; // Sync offset in seconds
+    private appearance: SubtitleAppearance = { ...DEFAULT_APPEARANCE };
 
     constructor(private readonly config: PlayerUIConfig) { }
 
@@ -102,6 +105,21 @@ export class SubtitleManager {
      */
     getOffset(): number {
         return this.offset;
+    }
+
+    /**
+     * Set subtitle appearance settings.
+     */
+    setAppearance(appearance: SubtitleAppearance): void {
+        this.appearance = { ...appearance };
+        this.applyAppearanceToOverlay();
+    }
+
+    /**
+     * Get current appearance settings.
+     */
+    getAppearance(): SubtitleAppearance {
+        return { ...this.appearance };
     }
 
     /**
@@ -182,7 +200,31 @@ export class SubtitleManager {
         this.overlay.className = `${prefix}player-subtitles`;
         container.appendChild(this.overlay);
 
+        this.applyAppearanceToOverlay();
         return this.overlay;
+    }
+
+    /**
+     * Apply appearance settings to the overlay element.
+     */
+    private applyAppearanceToOverlay(): void {
+        if (!this.overlay) return;
+
+        const a = this.appearance;
+        this.overlay.style.fontSize = `${a.fontSize}%`;
+        this.overlay.style.color = a.textColor;
+        this.overlay.style.fontWeight = a.bold ? '700' : '400';
+
+        // Background with opacity on the inner spans (handled via CSS variable)
+        const bgOpacity = a.backgroundOpacity / 100;
+        this.overlay.style.setProperty('--sub-bg-opacity', String(bgOpacity));
+
+        // Vertical position
+        if (a.verticalPosition === 'high') {
+            this.overlay.style.bottom = '15%';
+        } else {
+            this.overlay.style.bottom = '';
+        }
     }
 
     /**

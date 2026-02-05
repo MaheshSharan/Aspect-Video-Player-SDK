@@ -838,5 +838,143 @@ export class TitleDisplay implements UIComponent {
     }
 }
 
+/**
+ * Big center play button overlay (shown when paused).
+ */
+export class BigPlayButton implements UIComponent {
+    readonly name = 'big-play-button';
 
+    private element: HTMLButtonElement | null = null;
+    private readonly onClick: () => void;
 
+    constructor(private readonly config: PlayerUIConfig, onClick: () => void) {
+        this.onClick = onClick;
+    }
+
+    render(): HTMLElement {
+        const prefix = this.config.classPrefix ?? '';
+        this.element = document.createElement('button');
+        this.element.className = `${prefix}big-play`;
+        this.element.setAttribute('aria-label', 'Play');
+        this.element.setAttribute('type', 'button');
+
+        const circle = document.createElement('span');
+        circle.className = `${prefix}big-play__circle`;
+        circle.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+        this.element.appendChild(circle);
+
+        this.element.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.onClick();
+        });
+
+        return this.element;
+    }
+
+    update(snapshot: PlayerSnapshot): void {
+        if (!this.element) return;
+        const prefix = this.config.classPrefix ?? '';
+        const hide = snapshot.state === 'playing' || snapshot.state === 'buffering';
+        this.element.classList.toggle(`${prefix}big-play--hidden`, hide);
+    }
+
+    destroy(): void {
+        this.element = null;
+    }
+}
+
+/**
+ * Double-tap seek handler for mobile.
+ * Listens for rapid taps on left/right side of video container.
+ */
+export class DoubleTapSeek implements UIComponent {
+    readonly name = 'double-tap-seek';
+
+    private container: HTMLDivElement | null = null;
+    private leftRipple: HTMLDivElement | null = null;
+    private rightRipple: HTMLDivElement | null = null;
+    private lastTap = 0;
+    private lastSide: 'left' | 'right' | null = null;
+    private hideTimer: number | null = null;
+
+    private readonly onSeek: (delta: number) => void;
+    private readonly seekSeconds: number;
+
+    constructor(
+        private readonly config: PlayerUIConfig,
+        onSeek: (delta: number) => void,
+        seekSeconds = 10
+    ) {
+        this.onSeek = onSeek;
+        this.seekSeconds = seekSeconds;
+    }
+
+    render(): HTMLElement {
+        const prefix = this.config.classPrefix ?? '';
+
+        this.container = document.createElement('div');
+        this.container.style.cssText = 'position:absolute;inset:0;z-index:6;pointer-events:none;';
+
+        // Left ripple
+        this.leftRipple = document.createElement('div');
+        this.leftRipple.className = `${prefix}seek-ripple ${prefix}seek-ripple--left`;
+        this.leftRipple.innerHTML = `<span class="${prefix}seek-ripple__text">−${this.seekSeconds}s</span>`;
+
+        // Right ripple
+        this.rightRipple = document.createElement('div');
+        this.rightRipple.className = `${prefix}seek-ripple ${prefix}seek-ripple--right`;
+        this.rightRipple.innerHTML = `<span class="${prefix}seek-ripple__text">+${this.seekSeconds}s</span>`;
+
+        this.container.appendChild(this.leftRipple);
+        this.container.appendChild(this.rightRipple);
+
+        return this.container;
+    }
+
+    /**
+     * Call this from the parent's touch handler.
+     * Returns true if the tap was consumed as a double-tap seek.
+     */
+    handleTap(clientX: number, containerRect: DOMRect): boolean {
+        const now = Date.now();
+        const halfW = containerRect.width / 2;
+        const relX = clientX - containerRect.left;
+        const side: 'left' | 'right' = relX < halfW ? 'left' : 'right';
+
+        if (now - this.lastTap < 350 && this.lastSide === side) {
+            const delta = side === 'left' ? -this.seekSeconds : this.seekSeconds;
+            this.onSeek(delta);
+            this.showRipple(side);
+            this.lastTap = 0;
+            this.lastSide = null;
+            return true;
+        }
+
+        this.lastTap = now;
+        this.lastSide = side;
+        return false;
+    }
+
+    update(_snapshot: PlayerSnapshot): void { /* visual only */ }
+
+    destroy(): void {
+        if (this.hideTimer !== null) clearTimeout(this.hideTimer);
+        this.container = null;
+        this.leftRipple = null;
+        this.rightRipple = null;
+    }
+
+    private showRipple(side: 'left' | 'right'): void {
+        const prefix = this.config.classPrefix ?? '';
+        const el = side === 'left' ? this.leftRipple : this.rightRipple;
+        if (!el) return;
+
+        el.classList.add(`${prefix}seek-ripple--active`);
+
+        if (this.hideTimer !== null) clearTimeout(this.hideTimer);
+        this.hideTimer = window.setTimeout(() => {
+            this.leftRipple?.classList.remove(`${prefix}seek-ripple--active`);
+            this.rightRipple?.classList.remove(`${prefix}seek-ripple--active`);
+        }, 600);
+    }
+}

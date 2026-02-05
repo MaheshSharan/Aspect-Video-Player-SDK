@@ -17,6 +17,8 @@ import {
     SkipBackButton,
     SkipForwardButton,
     TitleDisplay,
+    BigPlayButton,
+    DoubleTapSeek,
 } from './controls';
 import { QualitySelector, SpeedSelector, LoadingSpinner, ErrorOverlay, SubtitleMenu } from './menus_v3';
 import { SubtitleManager } from './subtitles';
@@ -174,6 +176,20 @@ export class PlayerUI {
         this.components.push(error);
         this.container.appendChild(error.render());
 
+        // Big play button overlay (shown when paused)
+        const bigPlay = new BigPlayButton(this.config, () => this.handlePlayPause());
+        this.components.push(bigPlay);
+        this.container.appendChild(bigPlay.render());
+
+        // Double-tap seek (mobile)
+        const doubleTap = new DoubleTapSeek(this.config, (delta) => {
+            const snapshot = this.engine.getSnapshot();
+            const newTime = Math.max(0, Math.min(snapshot.duration, snapshot.currentTime + delta));
+            this.engine.seek(newTime);
+        });
+        this.components.push(doubleTap);
+        this.container.appendChild(doubleTap.render());
+
         // Create controls bar
         this.controlsBar = document.createElement('div');
         this.controlsBar.className = `${prefix}${CSS_CLASSES.CONTROLS}`;
@@ -278,6 +294,9 @@ export class PlayerUI {
                 },
                 (offset: number) => {
                     this.subtitleManager?.setOffset(offset);
+                },
+                (appearance) => {
+                    this.subtitleManager?.setAppearance(appearance);
                 }
             );
 
@@ -630,6 +649,8 @@ export class PlayerUI {
             target.closest('.player-btn') !== null ||
             target.closest('.player-menu') !== null ||
             target.closest('.player-slider') !== null ||
+            target.closest('.player-sub-panel') !== null ||
+            target.closest('.player-big-play') !== null ||
             target.tagName === 'BUTTON' ||
             target.tagName === 'INPUT';
 
@@ -641,7 +662,20 @@ export class PlayerUI {
         this.showControls();
     };
 
-    private handleTouchStart = (): void => {
+    private handleTouchStart = (e: TouchEvent): void => {
+        // Check for double-tap seek
+        const touch = e.touches[0];
+        if (touch && this.container) {
+            const doubleTap = this.components.find(c => c.name === 'double-tap-seek') as DoubleTapSeek | undefined;
+            if (doubleTap) {
+                const rect = this.container.getBoundingClientRect();
+                if (doubleTap.handleTap(touch.clientX, rect)) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+        }
+
         if (this.isControlsVisible) {
             const snapshot = this.engine.getSnapshot();
             if (snapshot.state === 'playing') {
