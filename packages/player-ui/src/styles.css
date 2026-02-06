@@ -66,6 +66,31 @@
   flex: 1;
 }
 
+.player-controls__left,
+.player-controls__center,
+.player-controls__right {
+  display: flex;
+  align-items: center;
+}
+
+.player-controls__left {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.player-controls__center {
+  flex: 1;
+  justify-content: flex-start;
+  padding: 0 16px;
+  min-width: 0;
+  /* Allow text truncation */
+}
+
+.player-controls__right {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* Buttons */
 .player-btn {
   display: flex;
@@ -244,9 +269,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -401,9 +429,18 @@
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.player-sub-content::-webkit-scrollbar { width: 5px; }
-.player-sub-content::-webkit-scrollbar-track { background: transparent; }
-.player-sub-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+.player-sub-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.player-sub-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.player-sub-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
 
 /* ── Toggle Switch (modern pill) ── */
 .player-sub-toggle {
@@ -514,9 +551,18 @@
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.player-sub-track-list::-webkit-scrollbar { width: 5px; }
-.player-sub-track-list::-webkit-scrollbar-track { background: transparent; }
-.player-sub-track-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+.player-sub-track-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.player-sub-track-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.player-sub-track-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
 
 .player-sub-track-item {
   display: flex;
@@ -592,9 +638,18 @@
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.player-sub-customize-content::-webkit-scrollbar { width: 5px; }
-.player-sub-customize-content::-webkit-scrollbar-track { background: transparent; }
-.player-sub-customize-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+.player-sub-customize-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.player-sub-customize-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.player-sub-customize-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
 
 /* Setting group */
 .player-sub-setting-group {
@@ -883,7 +938,8 @@
   width: 36px;
   height: 36px;
   color: var(--player-primary);
-  margin-left: 4px; /* optical centering for play triangle */
+  margin-left: 4px;
+  /* optical centering for play triangle */
 }
 
 .player-big-play--hidden {
@@ -996,6 +1052,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -1113,7 +1170,7 @@ input[type="range"].player-slider::-moz-range-thumb {
   .player-controls {
     padding: 6px 8px;
   }
-  
+
   .player-btn {
     width: 40px;
     height: 40px;
@@ -1121,16 +1178,16 @@ input[type="range"].player-slider::-moz-range-thumb {
     min-width: 44px;
     min-height: 44px;
   }
-  
+
   .player-btn svg {
     width: 20px;
     height: 20px;
   }
-  
+
   .player-time {
     font-size: 11px;
   }
-  
+
   /* Hide volume slider on mobile - use volume button tap */
   .player-volume-group .player-slider--volume {
     display: none;
@@ -1170,6 +1227,7 @@ input[type="range"].player-slider::-moz-range-thumb {
 
 /* Touch device improvements */
 @media (hover: none) and (pointer: coarse) {
+
   /* Always show volume slider on touch - no hover expand */
   .player-volume-group .player-slider--volume {
     opacity: 1;
@@ -1270,16 +1328,17 @@ input[type="range"].player-slider:focus-visible {
 
 /* High contrast mode support */
 @media (forced-colors: active) {
+
   .player-btn,
   .player-menu__item {
     border: 1px solid currentColor;
   }
-  
+
   .player-slider__fill,
   .player-slider__thumb {
     background: currentColor;
   }
-  
+
   .player-menu__item--active {
     background: Highlight;
     color: HighlightText;
@@ -1288,6 +1347,7 @@ input[type="range"].player-slider:focus-visible {
 
 /* Accessibility - Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
+
   .player-btn,
   .player-slider__thumb,
   .player-menu__item,
@@ -1295,7 +1355,7 @@ input[type="range"].player-slider:focus-visible {
   .player-controls {
     transition: none;
   }
-  
+
   .player-spinner svg {
     animation: none;
   }
