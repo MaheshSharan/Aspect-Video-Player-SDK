@@ -562,6 +562,15 @@
   color: var(--player-accent);
 }
 
+/* White dot indicator for selected track */
+.player-sub-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--player-primary);
+  flex-shrink: 0;
+}
+
 .player-sub-empty {
   padding: 24px 16px;
   text-align: center;

@@ -400,6 +400,7 @@ export class SubtitleMenu implements UIComponent {
     private currentView: 'tracks' | 'customize' = 'tracks';
     private searchQuery = '';
     private appearance: SubtitleAppearance = { ...DEFAULT_APPEARANCE };
+    private portalContainer: HTMLElement | null = null;
 
     private readonly onSelect: (trackId: string | null) => void;
     private readonly onOffsetChange: (offset: number) => void;
@@ -433,7 +434,7 @@ export class SubtitleMenu implements UIComponent {
         this.button.addEventListener('click', this.handleButtonClick);
 
         this.panel = document.createElement('div');
-        this.panel.className = `${prefix}sub-panel`;
+        this.panel.className = `${prefix}player-sub-panel`;
         this.panel.setAttribute('role', 'dialog');
         this.panel.setAttribute('aria-label', 'Subtitle options');
         this.panel.style.display = 'none';
@@ -443,7 +444,8 @@ export class SubtitleMenu implements UIComponent {
         this.panel.addEventListener('mousedown', (e) => e.stopPropagation());
 
         this.element.appendChild(this.button);
-        this.element.appendChild(this.panel);
+        // Panel is appended to portal container if set, otherwise to element
+        // This will be handled in openPanel()
 
         document.addEventListener('click', this.handleOutsideClick);
 
@@ -474,13 +476,27 @@ export class SubtitleMenu implements UIComponent {
 
     getAppearance(): SubtitleAppearance { return { ...this.appearance }; }
 
+    /**
+     * Set the container for portal rendering (e.g., fullscreen container).
+     * When set, the panel will be rendered inside this container instead of
+     * as a child of the button element.
+     */
+    setPortalContainer(container: HTMLElement | null): void {
+        this.portalContainer = container;
+    }
+
     destroy(): void {
         this.button?.removeEventListener('click', this.handleButtonClick);
         document.removeEventListener('click', this.handleOutsideClick);
+        // Remove panel from portal if it was portaled
+        if (this.panel && this.panel.parentElement && this.panel.parentElement !== this.element) {
+            this.panel.remove();
+        }
         this.element = null;
         this.panel = null;
         this.trackListEl = null;
         this.searchInput = null;
+        this.portalContainer = null;
     }
 
     // ── Internals ──────────────────────────────────────────
@@ -655,10 +671,9 @@ export class SubtitleMenu implements UIComponent {
             right.className = `${p}player-sub-track-right`;
 
             if (isActive) {
-                const check = document.createElement('span');
-                check.className = `${p}player-sub-check`;
-                check.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
-                right.appendChild(check);
+                const dot = document.createElement('span');
+                dot.className = `${p}player-sub-dot`;
+                right.appendChild(dot);
             }
 
             row.appendChild(label);
@@ -1079,7 +1094,11 @@ export class SubtitleMenu implements UIComponent {
     };
 
     private handleOutsideClick = (e: MouseEvent): void => {
-        if (this.element && !this.element.contains(e.target as Node)) {
+        const target = e.target as Node;
+        // Check if click is inside element OR inside portaled panel
+        const insideElement = this.element && this.element.contains(target);
+        const insidePanel = this.panel && this.panel.contains(target);
+        if (!insideElement && !insidePanel) {
             this.closePanel();
         }
     };
@@ -1090,6 +1109,18 @@ export class SubtitleMenu implements UIComponent {
         this.searchQuery = '';
         this.savedScrollPosition = 0;
         this.renderCurrentView();
+
+        // Append to portal container if set, otherwise to element
+        const container = this.portalContainer ?? this.element;
+        if (container && this.panel.parentElement !== container) {
+            container.appendChild(this.panel);
+        }
+
+        // Position panel when portaled
+        if (this.portalContainer && this.button) {
+            this.positionPanelInPortal();
+        }
+
         this.panel.style.display = 'flex';
         this.isOpen = true;
         this.button?.setAttribute('aria-expanded', 'true');
@@ -1102,6 +1133,33 @@ export class SubtitleMenu implements UIComponent {
         this.button?.setAttribute('aria-expanded', 'false');
         this.trackListEl = null;
         this.searchInput = null;
+
+        // Move panel back to element if it was portaled (for cleanup)
+        if (this.portalContainer && this.element && this.panel.parentElement === this.portalContainer) {
+            this.element.appendChild(this.panel);
+            this.panel.style.position = '';
+            this.panel.style.top = '';
+            this.panel.style.right = '';
+            this.panel.style.left = '';
+            this.panel.style.bottom = '';
+        }
+    }
+
+    private positionPanelInPortal(): void {
+        if (!this.panel || !this.button || !this.portalContainer) return;
+
+        const buttonRect = this.button.getBoundingClientRect();
+        const containerRect = this.portalContainer.getBoundingClientRect();
+
+        // Position panel above the button, aligned to the right
+        const rightOffset = containerRect.right - buttonRect.right;
+        const bottomOffset = containerRect.bottom - buttonRect.top + 8; // 8px gap
+
+        this.panel.style.position = 'absolute';
+        this.panel.style.bottom = `${bottomOffset}px`;
+        this.panel.style.right = `${rightOffset}px`;
+        this.panel.style.left = 'auto';
+        this.panel.style.top = 'auto';
     }
 
     // ── Icons ──────────────────────────────────────────────
